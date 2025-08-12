@@ -27,18 +27,18 @@ if (isset($_GET['deleteid'])) {
 }
 
 if (isset($_POST['name'])) {
-    $name = $_POST['name'];
-    $description = $_POST['description'];
-    $category = $_POST['category'];
-    $price = $_POST['price'];
-    $ingredients = $_POST['ingredients'];
-    $preparation_time = $_POST['preparation_time'];
-    $is_available = isset($_POST['is_available']) ? 1 : 0;
+    $data = array(
+        'name' => $_POST['name'],
+        'description' => $_POST['description'],
+        'category' => $_POST['category'],
+        'price' => floatval($_POST['price']),
+        'ingredients' => $_POST['ingredients'],
+        'preparation_time' => intval($_POST['preparation_time']),
+        'is_available' => isset($_POST['is_available']) ? 1 : 0
+    );
 
-    $newMenuItem = "INSERT INTO menu (name, description, category, price, ingredients, preparation_time, is_available, created_at) 
-                    VALUES ('$name', '$description', '$category', '$price', '$ingredients', '$preparation_time', '$is_available', NOW())";
-    if (save($newMenuItem)) {
-        $success_message = "Menu item '$name' has been successfully added!";
+    if (save('menu', $data)) {
+        $success_message = "Menu item '{$_POST['name']}' has been successfully added!";
     } else {
         $error_message = "Failed to add menu item. Please try again.";
     }

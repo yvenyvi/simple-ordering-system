@@ -26,23 +26,23 @@ if (isset($_GET['deleteid'])) {
 }
 
 if (isset($_POST['event_name'])) {
-    $event_name = $_POST['event_name'];
-    $description = $_POST['description'];
-    $event_date = $_POST['event_date'];
-    $event_time = $_POST['event_time'];
-    $location = $_POST['location'];
-    $capacity = $_POST['capacity'];
-    $price = $_POST['price'];
-    $event_type = $_POST['event_type'];
-    $contact_email = $_POST['contact_email'];
-    $contact_phone = $_POST['contact_phone'];
-    $requirements = $_POST['requirements'];
-    $is_active = isset($_POST['is_active']) ? 1 : 0;
+    $data = array(
+        'event_name' => $_POST['event_name'],
+        'description' => $_POST['description'],
+        'event_date' => $_POST['event_date'],
+        'event_time' => $_POST['event_time'],
+        'location' => $_POST['location'],
+        'capacity' => intval($_POST['capacity']),
+        'price' => floatval($_POST['price']),
+        'event_type' => $_POST['event_type'],
+        'contact_email' => $_POST['contact_email'],
+        'contact_phone' => $_POST['contact_phone'],
+        'requirements' => $_POST['requirements'],
+        'is_active' => isset($_POST['is_active']) ? 1 : 0
+    );
 
-    $newEvent = "INSERT INTO events (event_name, description, event_date, event_time, location, capacity, price, event_type, contact_email, contact_phone, requirements, is_active, created_at) 
-                 VALUES ('$event_name', '$description', '$event_date', '$event_time', '$location', '$capacity', '$price', '$event_type', '$contact_email', '$contact_phone', '$requirements', '$is_active', NOW())";
-    if (save($newEvent)) {
-        $success_message = "Event '$event_name' has been successfully created!";
+    if (save('events', $data)) {
+        $success_message = "Event '{$_POST['event_name']}' has been successfully created!";
     } else {
         $error_message = "Failed to create event. Please try again.";
     }

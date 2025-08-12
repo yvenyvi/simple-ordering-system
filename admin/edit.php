@@ -4,100 +4,68 @@ require_once "../models/db_Model.php";
 
 // Handle edit operations
 if (isset($_POST['update_user'])) {
-    $user_id = mysqli_real_escape_string($connection, $_POST['user_id']);
-    $first_name = mysqli_real_escape_string($connection, $_POST['first_name']);
-    $last_name = mysqli_real_escape_string($connection, $_POST['last_name']);
-    $email = mysqli_real_escape_string($connection, $_POST['email']);
-    $phone = mysqli_real_escape_string($connection, $_POST['phone']);
-    $address = mysqli_real_escape_string($connection, $_POST['address']);
-    $city = mysqli_real_escape_string($connection, $_POST['city']);
-    $state = mysqli_real_escape_string($connection, $_POST['state']);
-    $zip_code = mysqli_real_escape_string($connection, $_POST['zip_code']);
-    $is_active = isset($_POST['is_active']) ? 1 : 0;
+    $user_id = $_POST['user_id'];
+    $editType = 'user'; // Set edit type for redirect
+    $data = array(
+        'first_name' => $_POST['first_name'],
+        'last_name' => $_POST['last_name'],
+        'email' => $_POST['email'],
+        'phone' => $_POST['phone'],
+        'address' => $_POST['address'],
+        'city' => $_POST['city'],
+        'state' => $_POST['state'],
+        'zip_code' => $_POST['zip_code'],
+        'is_active' => isset($_POST['is_active']) ? 1 : 0
+    );
     
-    $updateQuery = "UPDATE users SET 
-                    first_name='$first_name', 
-                    last_name='$last_name', 
-                    email='$email', 
-                    phone='$phone', 
-                    address='$address', 
-                    city='$city', 
-                    state='$state', 
-                    zip_code='$zip_code', 
-                    is_active='$is_active',
-                    updated_at=NOW()
-                    WHERE user_id='$user_id'";
-    
-    if (mysqli_query($connection, $updateQuery)) {
-        $success_message = "User '$first_name $last_name' has been successfully updated!";
+    if (save('users', $data, 'user_id', $user_id)) {
+        $success_message = "User '{$_POST['first_name']} {$_POST['last_name']}' has been successfully updated!";
     } else {
         $error_message = "Failed to update user. Please try again.";
     }
 }
 
 if (isset($_POST['update_menu'])) {
-    $menu_id = mysqli_real_escape_string($connection, $_POST['menu_id']);
-    $name = mysqli_real_escape_string($connection, $_POST['name']);
-    $description = mysqli_real_escape_string($connection, $_POST['description']);
-    $category = mysqli_real_escape_string($connection, $_POST['category']);
-    $price = floatval($_POST['price']);
-    $ingredients = mysqli_real_escape_string($connection, $_POST['ingredients']);
-    $preparation_time = intval($_POST['preparation_time']);
-    $image_url = mysqli_real_escape_string($connection, $_POST['image_url']);
-    $is_available = isset($_POST['is_available']) ? 1 : 0;
+    $menu_id = $_POST['menu_id'];
+    $editType = 'menu'; // Set edit type for redirect
+    $data = array(
+        'name' => $_POST['name'],
+        'description' => $_POST['description'],
+        'category' => $_POST['category'],
+        'price' => floatval($_POST['price']),
+        'ingredients' => $_POST['ingredients'],
+        'preparation_time' => intval($_POST['preparation_time']),
+        'image_url' => $_POST['image_url'],
+        'is_available' => isset($_POST['is_available']) ? 1 : 0
+    );
     
-    $updateQuery = "UPDATE menu SET 
-                    name='$name', 
-                    description='$description', 
-                    category='$category', 
-                    price='$price', 
-                    ingredients='$ingredients', 
-                    preparation_time='$preparation_time', 
-                    image_url='$image_url', 
-                    is_available='$is_available',
-                    updated_at=NOW()
-                    WHERE menu_id='$menu_id'";
-    
-    if (mysqli_query($connection, $updateQuery)) {
-        $success_message = "Menu item '$name' has been successfully updated!";
+    if (save('menu', $data, 'menu_id', $menu_id)) {
+        $success_message = "Menu item '{$_POST['name']}' has been successfully updated!";
     } else {
         $error_message = "Failed to update menu item. Please try again.";
     }
 }
 
 if (isset($_POST['update_event'])) {
-    $event_id = mysqli_real_escape_string($connection, $_POST['event_id']);
-    $event_name = mysqli_real_escape_string($connection, $_POST['event_name']);
-    $description = mysqli_real_escape_string($connection, $_POST['description']);
-    $event_date = mysqli_real_escape_string($connection, $_POST['event_date']);
-    $event_time = mysqli_real_escape_string($connection, $_POST['event_time']);
-    $location = mysqli_real_escape_string($connection, $_POST['location']);
-    $capacity = intval($_POST['capacity']);
-    $price = floatval($_POST['price']);
-    $event_type = mysqli_real_escape_string($connection, $_POST['event_type']);
-    $contact_email = mysqli_real_escape_string($connection, $_POST['contact_email']);
-    $contact_phone = mysqli_real_escape_string($connection, $_POST['contact_phone']);
-    $requirements = mysqli_real_escape_string($connection, $_POST['requirements']);
-    $is_active = isset($_POST['is_active']) ? 1 : 0;
+    $event_id = $_POST['event_id'];
+    $editType = 'event'; // Set edit type for redirect
+    $data = array(
+        'event_name' => $_POST['event_name'],
+        'description' => $_POST['description'],
+        'event_date' => $_POST['event_date'],
+        'event_time' => $_POST['event_time'],
+        'location' => $_POST['location'],
+        'capacity' => intval($_POST['capacity']),
+        'price' => floatval($_POST['price']),
+        'event_type' => $_POST['event_type'],
+        'contact_email' => $_POST['contact_email'],
+        'contact_phone' => $_POST['contact_phone'],
+        'requirements' => $_POST['requirements'],
+        'is_active' => isset($_POST['is_active']) ? 1 : 0
+    );
     
-    $updateQuery = "UPDATE events SET 
-                    event_name='$event_name', 
-                    description='$description', 
-                    event_date='$event_date', 
-                    event_time='$event_time', 
-                    location='$location', 
-                    capacity='$capacity', 
-                    price='$price', 
-                    event_type='$event_type', 
-                    contact_email='$contact_email', 
-                    contact_phone='$contact_phone', 
-                    requirements='$requirements', 
-                    is_active='$is_active',
-                    updated_at=NOW()
-                    WHERE event_id='$event_id'";
-    
-    if (mysqli_query($connection, $updateQuery)) {
-        $success_message = "Event '$event_name' has been successfully updated!";
+    if (save('events', $data, 'event_id', $event_id)) {
+        $success_message = "Event '{$_POST['event_name']}' has been successfully updated!";
     } else {
         $error_message = "Failed to update event. Please try again.";
     }
@@ -105,7 +73,9 @@ if (isset($_POST['update_event'])) {
 
 // Get record to edit
 $editData = null;
-$editType = '';
+if (!isset($editType)) {
+    $editType = '';
+}
 
 if (isset($_GET['editid'])) {
     $edit_id = mysqli_real_escape_string($connection, $_GET['editid']);

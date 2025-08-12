@@ -5,21 +5,21 @@ require_once "../models/db_Model.php";
 require_once "../includes/table_functions.php";
 
 if (isset($_POST['first_name'])){
-    $first_name = $_POST['first_name'];
-    $last_name = $_POST['last_name'];
-    $email = $_POST['email'];
-    $password = password_hash($_POST['password'], PASSWORD_DEFAULT);
-    $phone = $_POST['phone'];
-    $address = $_POST['address'];
-    $city = $_POST['city'];
-    $state = $_POST['state'];
-    $zip_code = $_POST['zip_code'];
-    $is_active = isset($_POST['is_active']) ? 1 : 0;
+    $data = array(
+        'first_name' => $_POST['first_name'],
+        'last_name' => $_POST['last_name'],
+        'email' => $_POST['email'],
+        'password' => password_hash($_POST['password'], PASSWORD_DEFAULT),
+        'phone' => $_POST['phone'],
+        'address' => $_POST['address'],
+        'city' => $_POST['city'],
+        'state' => $_POST['state'],
+        'zip_code' => $_POST['zip_code'],
+        'is_active' => isset($_POST['is_active']) ? 1 : 0
+    );
 
-    $newUser = "INSERT INTO users (first_name, last_name, email, password, phone, address, city, state, zip_code, is_active, created_at) 
-                VALUES ('$first_name', '$last_name', '$email', '$password', '$phone', '$address', '$city', '$state', '$zip_code', '$is_active', NOW())";
-    if (save($newUser)) {
-        $success_message = "User '$first_name $last_name' has been successfully added!";
+    if (save('users', $data)) {
+        $success_message = "User '{$_POST['first_name']} {$_POST['last_name']}' has been successfully added!";
     } else {
         $error_message = "Failed to add user. Please try again.";
     }

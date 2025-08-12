@@ -23,19 +23,52 @@ function confirm_query($result_set){
     }
 }
 
-function save($insertQuery){
+function save($table, $data, $id_field = null, $id_value = null){
     global $connection;
-    $sql = mysqli_query($connection, $insertQuery) or die (mysqli_error($connection));
-    $pid = mysqli_insert_id($connection);
     
-    // Handle file upload if exists
-    if(isset($_FILES['fileField']) && $_FILES['fileField']['tmp_name']) {
-        $newname = "$pid.jpg";
-        move_uploaded_file($_FILES['fileField']['tmp_name'], "../assets/images/products/$newname");
+    // Escape all data values
+    $escaped_data = array();
+    foreach ($data as $field => $value) {
+        if ($value === null) {
+            $escaped_data[$field] = 'NULL';
+        } else {
+            $escaped_data[$field] = "'" . mysqli_real_escape_string($connection, $value) . "'";
+        }
     }
     
-    confirm_query($sql);
-    return $pid;
+    // Determine if this is an INSERT or UPDATE operation
+    if ($id_field && $id_value) {
+        // UPDATE operation
+        $set_clauses = array();
+        foreach ($escaped_data as $field => $value) {
+            $set_clauses[] = "$field = $value";
+        }
+        $set_string = implode(", ", $set_clauses);
+        $escaped_id = mysqli_real_escape_string($connection, $id_value);
+        
+        $sql_query = "UPDATE $table SET $set_string, updated_at = NOW() WHERE $id_field = '$escaped_id'";
+        $result = mysqli_query($connection, $sql_query) or die(mysqli_error($connection));
+        confirm_query($result);
+        return $id_value; // Return the existing ID for updates
+        
+    } else {
+        // INSERT operation
+        $fields = implode(", ", array_keys($escaped_data));
+        $values = implode(", ", array_values($escaped_data));
+        
+        $sql_query = "INSERT INTO $table ($fields, created_at, updated_at) VALUES ($values, NOW(), NOW())";
+        $result = mysqli_query($connection, $sql_query) or die(mysqli_error($connection));
+        $new_id = mysqli_insert_id($connection);
+        
+        // Handle file upload if exists (for INSERT operations)
+        if(isset($_FILES['fileField']) && $_FILES['fileField']['tmp_name']) {
+            $newname = "$new_id.jpg";
+            move_uploaded_file($_FILES['fileField']['tmp_name'], "../assets/images/products/$newname");
+        }
+        
+        confirm_query($result);
+        return $new_id; // Return the new ID for inserts
+    }
 }
 
 function display_all($sql, $column_mappings, $url){

@@ -35,49 +35,12 @@
       <div class="container">
         <h2>Featured Dishes</h2>
         <div class="product-grid">
-          <!-- Beef Burger -->
-          <div class="product-card">
-            <img
-              src="../assets/images/products/placeholder.jpg"
-              alt="Beef Burger" />
-            <h3>Beef Burger</h3>
-            <p>Juicy beef patty with lettuce, tomato, cheese, and our special sauce on a brioche bun.</p>
-            <p class="price">$12.99</p>
-            <a href="#" class="btn">Add to Cart</a>
-          </div>
-
-          <!-- Margherita Pizza -->
-          <div class="product-card">
-            <img
-              src="../assets/images/products/placeholder.jpg"
-              alt="Margherita Pizza" />
-            <h3>Margherita Pizza</h3>
-            <p>Classic pizza with tomato sauce, fresh mozzarella, basil leaves, and olive oil.</p>
-            <p class="price">$14.99</p>
-            <a href="#" class="btn">Add to Cart</a>
-          </div>
-
-          <!-- Pasta Carbonara -->
-          <div class="product-card">
-            <img
-              src="../assets/images/products/placeholder.jpg"
-              alt="Pasta Carbonara" />
-            <h3>Pasta Carbonara</h3>
-            <p>Al dente spaghetti with crispy bacon, creamy egg sauce, and freshly ground black pepper.</p>
-            <p class="price">$16.99</p>
-            <a href="#" class="btn">Add to Cart</a>
-          </div>
-
-          <!-- Chocolate Cake -->
-          <div class="product-card">
-            <img
-              src="../assets/images/products/placeholder.jpg"
-              alt="Chocolate Cake" />
-            <h3>Chocolate Cake</h3>
-            <p>Rich, moist chocolate cake with ganache frosting and fresh berries on top.</p>
-            <p class="price">$8.99</p>
-            <a href="#" class="btn">Add to Cart</a>
-          </div>
+          <?php
+          require_once '../models/db_Model.php';
+          
+          // Display featured products from database using the enhanced db_model
+          display_featured_products(4);
+          ?>
         </div>
       </div>
     </section>

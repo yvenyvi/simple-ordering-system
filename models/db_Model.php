@@ -71,7 +71,7 @@ function save($table, $data, $id_field = null, $id_value = null){
     }
 }
 
-function display_all($sql, $column_mappings, $url){
+function display_all($sql, $column_mappings = null, $url = null, $display_mode = 'admin'){
     global $connection;
     $output_list = "";
     $result = mysqli_query($connection, $sql);
@@ -80,21 +80,68 @@ function display_all($sql, $column_mappings, $url){
 
     if ($rowCount > 0) {
         while($row = mysqli_fetch_array($result)){ 
-            foreach ($column_mappings as $column_name => $label) {
-                $value = $row[$column_name];
-                if (strpos($column_name, 'date') !== false) {
-                    $value = date("M d, Y", strtotime($value));
-                }
-                $output_list .= "<strong>$label </strong> $value &nbsp; ";
-            }
             
-            $id = $row['user_id'] ?? $row['menu_id'] ?? $row['event_id'] ?? $row['id'];
-            $output_list .= "<a href='edit.php?editid=$id'>edit</a> &bull; <a href='$url?deleteid=$id'>delete</a><br />";
+            // User-side product card display
+            if ($display_mode === 'user' || $display_mode === 'products') {
+                // Determine the image source
+                $image_src = '../assets/images/products/placeholder.jpg'; // Default fallback
+                
+                if (!empty($row['image_url'])) {
+                    if (file_exists($row['image_url'])) {
+                        $image_src = $row['image_url'];
+                    } elseif (file_exists('../' . ltrim($row['image_url'], '../'))) {
+                        $image_src = '../' . ltrim($row['image_url'], '../');
+                    }
+                } elseif (file_exists("../assets/images/products/{$row['menu_id']}.jpg")) {
+                    $image_src = "../assets/images/products/{$row['menu_id']}.jpg";
+                }
+                
+                echo '<div class="product-card" data-category="' . htmlspecialchars($row['category']) . '">';
+                echo '<img src="' . htmlspecialchars($image_src) . '" alt="' . htmlspecialchars($row['name']) . '">';
+                echo '<h3>' . htmlspecialchars($row['name']) . '</h3>';
+                echo '<p>' . htmlspecialchars($row['description']) . '</p>';
+                
+                if (!empty($row['preparation_time'])) {
+                    echo '<p class="prep-time"><i class="fas fa-clock"></i> ' . $row['preparation_time'] . ' min</p>';
+                }
+                
+                echo '<p class="price">$' . number_format($row['price'], 2) . '</p>';
+                echo '<a href="#" class="btn" data-menu-id="' . $row['menu_id'] . '">Add to Cart</a>';
+                echo '</div>';
+                
+            } else {
+                // Admin-side list display
+                if ($column_mappings) {
+                    foreach ($column_mappings as $column_name => $label) {
+                        $value = $row[$column_name];
+                        if (strpos($column_name, 'date') !== false) {
+                            $value = date("M d, Y", strtotime($value));
+                        }
+                        $output_list .= "<strong>$label </strong> $value &nbsp; ";
+                    }
+                    
+                    $id = $row['user_id'] ?? $row['menu_id'] ?? $row['event_id'] ?? $row['id'];
+                    $output_list .= "<a href='edit.php?editid=$id'>edit</a> &bull; <a href='$url?deleteid=$id'>delete</a><br />";
+                }
+            }
         }
+        
+        // For admin display, echo the accumulated output
+        if ($display_mode === 'admin' && $column_mappings !== null) {
+            echo $output_list;
+        }
+        
     } else {
-        $output_list = "No records found.";
+        if ($display_mode === 'user' || $display_mode === 'products') {
+            // User-side no items message
+            echo '<div class="no-items">';
+            echo '<p>No menu items found.</p>';
+            echo '</div>';
+        } else {
+            // Admin-side no records message
+            echo "No records found.";
+        }
     }
-    echo $output_list;
 }
 
 function delete_record($table, $id_field, $id_value) {
@@ -103,6 +150,61 @@ function delete_record($table, $id_field, $id_value) {
     $result = mysqli_query($connection, $sql) or die(mysqli_error($connection));
     confirm_query($result);
     return $result;
+}
+
+// Helper functions for user-side display with column mapping support
+function display_menu_products($category = null) {
+    global $connection;
+    
+    $sql = "SELECT * FROM menu WHERE is_available = 1";
+    
+    if ($category && $category !== 'all') {
+        $escaped_category = mysqli_real_escape_string($connection, $category);
+        $sql .= " AND category = '$escaped_category'";
+    }
+    
+    $sql .= " ORDER BY name ASC";
+    
+    // Use display_all with 'products' mode for user display
+    display_all($sql, null, null, 'products');
+}
+
+function display_featured_products($limit = 4) {
+    $sql = "SELECT * FROM menu WHERE is_available = 1 ORDER BY created_at DESC LIMIT $limit";
+    display_all($sql, null, null, 'products');
+}
+
+// Admin functions with column mapping
+function display_admin_menu($sql = null) {
+    if (!$sql) {
+        $sql = "SELECT * FROM menu ORDER BY created_at DESC";
+    }
+    
+    $column_mappings = array(
+        'name' => 'Menu Item',
+        'category' => 'Category',
+        'price' => 'Price',
+        'is_available' => 'Status',
+        'created_at' => 'Added'
+    );
+    
+    display_all($sql, $column_mappings, 'menu_list.php', 'admin');
+}
+
+function display_admin_users($sql = null) {
+    if (!$sql) {
+        $sql = "SELECT * FROM users ORDER BY created_at DESC";
+    }
+    
+    $column_mappings = array(
+        'first_name' => 'First Name',
+        'last_name' => 'Last Name',
+        'email' => 'Email',
+        'phone' => 'Phone',
+        'created_at' => 'Joined'
+    );
+    
+    display_all($sql, $column_mappings, 'user_list.php', 'admin');
 }
 
 if (isset($_GET['deleteid'])) {

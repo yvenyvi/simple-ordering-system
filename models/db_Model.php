@@ -89,8 +89,8 @@ function display_all($sql, $column_mappings = null, $url = null, $display_mode =
                 if (!empty($row['image_url'])) {
                     if (file_exists($row['image_url'])) {
                         $image_src = $row['image_url'];
-                    } elseif (file_exists('../' . ltrim($row['image_url'], '../'))) {
-                        $image_src = '../' . ltrim($row['image_url'], '../');
+                    } elseif (file_exists('../' . preg_replace('/^(\.\.\/)+/', '', $row['image_url']))) {
+                        $image_src = '../' . preg_replace('/^(\.\.\/)+/', '', $row['image_url']);
                     }
                 } elseif (file_exists("../assets/images/products/{$row['menu_id']}.jpg")) {
                     $image_src = "../assets/images/products/{$row['menu_id']}.jpg";

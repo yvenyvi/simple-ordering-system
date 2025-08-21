@@ -57,27 +57,95 @@ function formatDate(dateString) {
     return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
 }
 
-function showMessage(message, type) {
+// Bootstrap Alert Functions (for simple notifications)
+function showBootstrapAlert(message, type, duration = 5000) {
     // Remove existing messages
-    const existingMessages = document.querySelectorAll('.message');
+    const existingMessages = document.querySelectorAll('.bootstrap-alert');
     existingMessages.forEach(msg => msg.remove());
     
-    // Create new message
-    const messageDiv = document.createElement('div');
-    messageDiv.className = `alert alert-${type === 'error' ? 'danger' : type} alert-dismissible fade show`;
-    messageDiv.innerHTML = `
-        ${message}
+    // Create new Bootstrap alert
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type === 'error' ? 'danger' : type} alert-dismissible fade show bootstrap-alert`;
+    alertDiv.style.position = 'fixed';
+    alertDiv.style.top = '80px';
+    alertDiv.style.right = '20px';
+    alertDiv.style.zIndex = '9999';
+    alertDiv.style.maxWidth = '400px';
+    alertDiv.innerHTML = `
+        <i class="fas fa-${getAlertIcon(type)} me-2"></i>${message}
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     `;
     
-    // Insert at the top of the main content
-    const adminMain = document.querySelector('.admin-main');
-    adminMain.insertBefore(messageDiv, adminMain.firstChild);
+    // Add to page
+    document.body.appendChild(alertDiv);
     
-    // Auto-remove after 5 seconds
-    setTimeout(() => {
-        if (messageDiv.parentNode) {
-            messageDiv.remove();
+    // Auto-remove after specified duration
+    if (duration > 0) {
+        setTimeout(() => {
+            if (alertDiv.parentNode) {
+                alertDiv.remove();
+            }
+        }, duration);
+    }
+}
+
+function getAlertIcon(type) {
+    const icons = {
+        'success': 'check-circle',
+        'error': 'exclamation-circle',
+        'danger': 'exclamation-circle',
+        'warning': 'exclamation-triangle',
+        'info': 'info-circle'
+    };
+    return icons[type] || 'info-circle';
+}
+
+// SweetAlert Functions (for confirmations and decisions)
+function showSweetConfirmation(title, text, confirmCallback, options = {}) {
+    const defaultOptions = {
+        title: title,
+        text: text,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'Yes, proceed!',
+        cancelButtonText: 'Cancel'
+    };
+    
+    const finalOptions = { ...defaultOptions, ...options };
+    
+    Swal.fire(finalOptions).then((result) => {
+        if (result.isConfirmed && typeof confirmCallback === 'function') {
+            confirmCallback();
         }
-    }, 5000);
+    });
+}
+
+function showSweetSuccess(title, text, callback = null) {
+    Swal.fire({
+        icon: 'success',
+        title: title,
+        text: text,
+        timer: 3000,
+        showConfirmButton: false
+    }).then(() => {
+        if (typeof callback === 'function') {
+            callback();
+        }
+    });
+}
+
+function showSweetError(title, text) {
+    Swal.fire({
+        icon: 'error',
+        title: title,
+        text: text
+    });
+}
+
+// Legacy function for backward compatibility
+function showMessage(message, type) {
+    // Use Bootstrap alerts for simple notifications
+    showBootstrapAlert(message, type);
 }

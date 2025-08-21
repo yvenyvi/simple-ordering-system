@@ -194,23 +194,13 @@ if (isset($_POST['event_name'])) {
             const today = new Date().toISOString().split('T')[0];
             eventDateInput.min = today;
 
-            // Show success/error messages
+            // Show success/error messages using Bootstrap alerts
             <?php if (isset($success_message)): ?>
-                Swal.fire({
-                    icon: 'success',
-                    title: 'Success!',
-                    text: '<?php echo addslashes($success_message); ?>',
-                    timer: 3000,
-                    showConfirmButton: false
-                });
+                showBootstrapAlert('<?php echo addslashes($success_message); ?>', 'success', 4000);
             <?php endif; ?>
 
             <?php if (isset($error_message)): ?>
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Error!',
-                    text: '<?php echo addslashes($error_message); ?>'
-                });
+                showBootstrapAlert('<?php echo addslashes($error_message); ?>', 'error', 6000);
             <?php endif; ?>
         });
 
@@ -222,7 +212,7 @@ if (isset($_POST['event_name'])) {
             
             if (eventDate < today) {
                 e.preventDefault();
-                alert('Event date cannot be in the past. Please select a valid date.');
+                showBootstrapAlert('Event date cannot be in the past. Please select a valid date.', 'error', 5000);
                 return false;
             }
         });

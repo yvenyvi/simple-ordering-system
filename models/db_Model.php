@@ -63,7 +63,14 @@ function save($table, $data, $id_field = null, $id_value = null){
         // Handle file upload if exists (for INSERT operations)
         if(isset($_FILES['fileField']) && $_FILES['fileField']['tmp_name']) {
             $newname = "$new_id.jpg";
-            move_uploaded_file($_FILES['fileField']['tmp_name'], "../assets/images/products/$newname");
+            $upload_path = "../assets/images/products/$newname";
+            
+            if(move_uploaded_file($_FILES['fileField']['tmp_name'], $upload_path)) {
+                // Update the database with the image URL
+                $image_url = "assets/images/products/$newname";
+                $update_sql = "UPDATE $table SET image_url = '" . mysqli_real_escape_string($connection, $image_url) . "' WHERE {$table}_id = '$new_id'";
+                mysqli_query($connection, $update_sql);
+            }
         }
         
         confirm_query($result);

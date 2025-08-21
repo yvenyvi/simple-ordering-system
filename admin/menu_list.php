@@ -37,8 +37,22 @@ if (isset($_POST['name'])) {
         'is_available' => isset($_POST['is_available']) ? 1 : 0
     );
 
-    if (save('menu', $data)) {
-        $success_message = "Menu item '{$_POST['name']}' has been successfully added!";
+    $new_id = save('menu', $data);
+    
+    if ($new_id) {
+        // If a file was uploaded, update the database with the image URL
+        if (isset($_FILES['fileField']) && $_FILES['fileField']['tmp_name']) {
+            $image_url = "../assets/images/products/{$new_id}.jpg";
+            
+            // Update the menu record with the image URL
+            global $connection;
+            $update_sql = "UPDATE menu SET image_url = '" . mysqli_real_escape_string($connection, $image_url) . "' WHERE menu_id = '$new_id'";
+            mysqli_query($connection, $update_sql);
+            
+            $success_message = "Menu item '{$_POST['name']}' has been successfully added with image!";
+        } else {
+            $success_message = "Menu item '{$_POST['name']}' has been successfully added!";
+        }
     } else {
         $error_message = "Failed to add menu item. Please try again.";
     }
@@ -168,23 +182,13 @@ if (isset($_POST['name'])) {
                 hideAddMenuForm();
             }
 
-            // Show success/error messages
+            // Show success/error messages using Bootstrap alerts
             <?php if (isset($success_message)): ?>
-                Swal.fire({
-                    icon: 'success',
-                    title: 'Success!',
-                    text: '<?php echo addslashes($success_message); ?>',
-                    timer: 3000,
-                    showConfirmButton: false
-                });
+                showBootstrapAlert('<?php echo addslashes($success_message); ?>', 'success', 4000);
             <?php endif; ?>
 
             <?php if (isset($error_message)): ?>
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Error!',
-                    text: '<?php echo addslashes($error_message); ?>'
-                });
+                showBootstrapAlert('<?php echo addslashes($error_message); ?>', 'error', 6000);
             <?php endif; ?>
         });
     </script>

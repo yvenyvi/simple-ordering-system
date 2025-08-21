@@ -138,23 +138,13 @@ if (isset($_POST['first_name'])){
                 hideAddUserForm();
             }
 
-            // Show success/error messages
+            // Show success/error messages using Bootstrap alerts
             <?php if (isset($success_message)): ?>
-                Swal.fire({
-                    icon: 'success',
-                    title: 'Success!',
-                    text: '<?php echo addslashes($success_message); ?>',
-                    timer: 3000,
-                    showConfirmButton: false
-                });
+                showBootstrapAlert('<?php echo addslashes($success_message); ?>', 'success', 4000);
             <?php endif; ?>
 
             <?php if (isset($error_message)): ?>
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Error!',
-                    text: '<?php echo addslashes($error_message); ?>'
-                });
+                showBootstrapAlert('<?php echo addslashes($error_message); ?>', 'error', 6000);
             <?php endif; ?>
         });
     </script>

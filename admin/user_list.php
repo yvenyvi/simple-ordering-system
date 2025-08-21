@@ -2,23 +2,27 @@
 $page_title = "User Management";
 include 'includes/header.php';
 require_once "../models/db_Model.php";
+require_once "../includes/table_functions.php";
 
 if (isset($_POST['first_name'])){
-    $first_name = $_POST['first_name'];
-    $last_name = $_POST['last_name'];
-    $email = $_POST['email'];
-    $password = password_hash($_POST['password'], PASSWORD_DEFAULT);
-    $phone = $_POST['phone'];
-    $address = $_POST['address'];
-    $city = $_POST['city'];
-    $state = $_POST['state'];
-    $zip_code = $_POST['zip_code'];
-    $is_active = isset($_POST['is_active']) ? 1 : 0;
+    $data = array(
+        'first_name' => $_POST['first_name'],
+        'last_name' => $_POST['last_name'],
+        'email' => $_POST['email'],
+        'password' => password_hash($_POST['password'], PASSWORD_DEFAULT),
+        'phone' => $_POST['phone'],
+        'address' => $_POST['address'],
+        'city' => $_POST['city'],
+        'state' => $_POST['state'],
+        'zip_code' => $_POST['zip_code'],
+        'is_active' => isset($_POST['is_active']) ? 1 : 0
+    );
 
-    $newUser = "INSERT INTO users (first_name, last_name, email, password, phone, address, city, state, zip_code, is_active, created_at) 
-                VALUES ('$first_name', '$last_name', '$email', '$password', '$phone', '$address', '$city', '$state', '$zip_code', '$is_active', NOW())";
-    save($newUser);
-    redirect_to("user_list.php");
+    if (save('users', $data)) {
+        $success_message = "User '{$_POST['first_name']} {$_POST['last_name']}' has been successfully added!";
+    } else {
+        $error_message = "Failed to add user. Please try again.";
+    }
 }
 ?>
 
@@ -101,22 +105,10 @@ if (isset($_POST['first_name'])){
 
                 <!-- Users List -->
                 <div class="table-container">
-                    <h3>Registered Users</h3>
-                    <div class="items-list">
-                        <?php
-                        $sql = "SELECT * FROM users ORDER BY created_at DESC";
-                        $column_mappings = array(
-                            'user_id' => 'ID:',
-                            'first_name' => 'First Name:',
-                            'last_name' => 'Last Name:',
-                            'email' => 'Email:',
-                            'phone' => 'Phone:',
-                            'is_active' => 'Status:',
-                            'created_at' => 'Joined:'
-                        );
-                        display_all($sql, $column_mappings, 'user_list.php');
-                        ?>
-                    </div>
+                    <?php
+                    $sql = "SELECT * FROM users ORDER BY created_at DESC";
+                    display_users_table($sql);
+                    ?>
                 </div>
             </section>
 
@@ -145,6 +137,25 @@ if (isset($_POST['first_name'])){
             if (!urlParams.has('error')) {
                 hideAddUserForm();
             }
+
+            // Show success/error messages
+            <?php if (isset($success_message)): ?>
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Success!',
+                    text: '<?php echo addslashes($success_message); ?>',
+                    timer: 3000,
+                    showConfirmButton: false
+                });
+            <?php endif; ?>
+
+            <?php if (isset($error_message)): ?>
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error!',
+                    text: '<?php echo addslashes($error_message); ?>'
+                });
+            <?php endif; ?>
         });
     </script>
 

@@ -2,6 +2,7 @@
 $page_title = "Event Management";
 include 'includes/header.php';
 require_once "../models/db_Model.php";
+require_once "../includes/table_functions.php";
 
 // Handle delete request
 if (isset($_GET['deleteid'])) {
@@ -25,23 +26,26 @@ if (isset($_GET['deleteid'])) {
 }
 
 if (isset($_POST['event_name'])) {
-    $event_name = $_POST['event_name'];
-    $description = $_POST['description'];
-    $event_date = $_POST['event_date'];
-    $event_time = $_POST['event_time'];
-    $location = $_POST['location'];
-    $capacity = $_POST['capacity'];
-    $price = $_POST['price'];
-    $event_type = $_POST['event_type'];
-    $contact_email = $_POST['contact_email'];
-    $contact_phone = $_POST['contact_phone'];
-    $requirements = $_POST['requirements'];
-    $is_active = isset($_POST['is_active']) ? 1 : 0;
+    $data = array(
+        'event_name' => $_POST['event_name'],
+        'description' => $_POST['description'],
+        'event_date' => $_POST['event_date'],
+        'event_time' => $_POST['event_time'],
+        'location' => $_POST['location'],
+        'capacity' => intval($_POST['capacity']),
+        'price' => floatval($_POST['price']),
+        'event_type' => $_POST['event_type'],
+        'contact_email' => $_POST['contact_email'],
+        'contact_phone' => $_POST['contact_phone'],
+        'requirements' => $_POST['requirements'],
+        'is_active' => isset($_POST['is_active']) ? 1 : 0
+    );
 
-    $newEvent = "INSERT INTO events (event_name, description, event_date, event_time, location, capacity, price, event_type, contact_email, contact_phone, requirements, is_active, created_at) 
-                 VALUES ('$event_name', '$description', '$event_date', '$event_time', '$location', '$capacity', '$price', '$event_type', '$contact_email', '$contact_phone', '$requirements', '$is_active', NOW())";
-    save($newEvent);
-    redirect_to("event_list.php");
+    if (save('events', $data)) {
+        $success_message = "Event '{$_POST['event_name']}' has been successfully created!";
+    } else {
+        $error_message = "Failed to create event. Please try again.";
+    }
 }
 ?>
 
@@ -150,25 +154,10 @@ if (isset($_POST['event_name'])) {
 
                 <!-- Events List -->
                 <div class="table-container">
-                    <h3>Events</h3>
-                    <div class="items-list">
-                        <?php
-                        $sql = "SELECT * FROM events ORDER BY event_date ASC, event_time ASC";
-                        $column_mappings = array(
-                            'event_id' => 'ID:',
-                            'event_name' => 'Event:',
-                            'event_type' => 'Type:',
-                            'event_date' => 'Date:',
-                            'event_time' => 'Time:',
-                            'location' => 'Location:',
-                            'capacity' => 'Capacity:',
-                            'price' => 'Price: $',
-                            'is_active' => 'Status:',
-                            'created_at' => 'Created:'
-                        );
-                        display_all($sql, $column_mappings, 'event_list.php');
-                        ?>
-                    </div>
+                    <?php
+                    $sql = "SELECT * FROM events ORDER BY event_date ASC, event_time ASC";
+                    display_events_table($sql);
+                    ?>
                 </div>
             </section>
 
@@ -204,6 +193,25 @@ if (isset($_POST['event_name'])) {
             const eventDateInput = document.getElementById('event-date');
             const today = new Date().toISOString().split('T')[0];
             eventDateInput.min = today;
+
+            // Show success/error messages
+            <?php if (isset($success_message)): ?>
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Success!',
+                    text: '<?php echo addslashes($success_message); ?>',
+                    timer: 3000,
+                    showConfirmButton: false
+                });
+            <?php endif; ?>
+
+            <?php if (isset($error_message)): ?>
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error!',
+                    text: '<?php echo addslashes($error_message); ?>'
+                });
+            <?php endif; ?>
         });
 
         // Form validation

@@ -2,6 +2,7 @@
 $page_title = "Menu Management";
 include 'includes/header.php';
 require_once "../models/db_Model.php";
+require_once "../includes/table_functions.php";
 
 // Handle delete request
 if (isset($_GET['deleteid'])) {
@@ -26,18 +27,21 @@ if (isset($_GET['deleteid'])) {
 }
 
 if (isset($_POST['name'])) {
-    $name = $_POST['name'];
-    $description = $_POST['description'];
-    $category = $_POST['category'];
-    $price = $_POST['price'];
-    $ingredients = $_POST['ingredients'];
-    $preparation_time = $_POST['preparation_time'];
-    $is_available = isset($_POST['is_available']) ? 1 : 0;
+    $data = array(
+        'name' => $_POST['name'],
+        'description' => $_POST['description'],
+        'category' => $_POST['category'],
+        'price' => floatval($_POST['price']),
+        'ingredients' => $_POST['ingredients'],
+        'preparation_time' => intval($_POST['preparation_time']),
+        'is_available' => isset($_POST['is_available']) ? 1 : 0
+    );
 
-    $newMenuItem = "INSERT INTO menu (name, description, category, price, ingredients, preparation_time, is_available, created_at) 
-                    VALUES ('$name', '$description', '$category', '$price', '$ingredients', '$preparation_time', '$is_available', NOW())";
-    save($newMenuItem);
-    redirect_to("menu_list.php");
+    if (save('menu', $data)) {
+        $success_message = "Menu item '{$_POST['name']}' has been successfully added!";
+    } else {
+        $error_message = "Failed to add menu item. Please try again.";
+    }
 }
 ?>
 
@@ -129,21 +133,10 @@ if (isset($_POST['name'])) {
 
                 <!-- Menu Items List -->
                 <div class="table-container">
-                    <h3>Menu Items</h3>
-                    <div class="items-list">
-                        <?php
-                        $sql = "SELECT * FROM menu ORDER BY created_at DESC";
-                        $column_mappings = array(
-                            'menu_id' => 'ID:',
-                            'name' => 'Name:',
-                            'category' => 'Category:',
-                            'price' => 'Price: $',
-                            'is_available' => 'Available:',
-                            'created_at' => 'Created:'
-                        );
-                        display_all($sql, $column_mappings, 'menu_list.php');
-                        ?>
-                    </div>
+                    <?php
+                    $sql = "SELECT * FROM menu ORDER BY created_at DESC";
+                    display_menu_table($sql);
+                    ?>
                 </div>
             </section>
 
@@ -174,6 +167,25 @@ if (isset($_POST['name'])) {
             if (!urlParams.has('error')) {
                 hideAddMenuForm();
             }
+
+            // Show success/error messages
+            <?php if (isset($success_message)): ?>
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Success!',
+                    text: '<?php echo addslashes($success_message); ?>',
+                    timer: 3000,
+                    showConfirmButton: false
+                });
+            <?php endif; ?>
+
+            <?php if (isset($error_message)): ?>
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error!',
+                    text: '<?php echo addslashes($error_message); ?>'
+                });
+            <?php endif; ?>
         });
     </script>
 

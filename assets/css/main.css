@@ -669,3 +669,102 @@ body {
         height: 50px;
     }
 }
+
+/* Category Filter Styles */
+.category-filter {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.filter-btn {
+    display: inline-block;
+    padding: 8px 16px;
+    background: #f8f9fa;
+    color: #333;
+    text-decoration: none;
+    border-radius: 20px;
+    border: 2px solid #e9ecef;
+    font-size: 0.9rem;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    text-transform: capitalize;
+}
+
+.filter-btn:hover {
+    background: #3a6073;
+    color: white;
+    border-color: #3a6073;
+}
+
+.filter-btn.active {
+    background: linear-gradient(135deg, #3a6073 0%, #16222a 100%);
+    color: white;
+    border-color: #16222a;
+}
+
+/* Preparation time display */
+.prep-time {
+    font-size: 0.9rem;
+    color: #666;
+    margin: 0.5rem 0;
+    font-style: italic;
+}
+
+.prep-time i {
+    margin-right: 5px;
+    color: #3a6073;
+}
+
+/* No Items Message */
+.no-items {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 3rem;
+    color: #666;
+    font-size: 1.1rem;
+}
+
+.no-items p {
+    margin: 0;
+    font-style: italic;
+}
+
+/* Responsive Design for Category Filters */
+@media (max-width: 768px) {
+    .category-filter {
+        justify-content: center;
+        margin-bottom: 20px;
+    }
+    
+    .filter-btn {
+        padding: 6px 12px;
+        font-size: 0.8rem;
+    }
+    
+    .product-grid {
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        gap: 20px;
+    }
+    
+    .product-card {
+        padding: 1rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .category-filter {
+        gap: 5px;
+    }
+    
+    .filter-btn {
+        padding: 4px 8px;
+        font-size: 0.75rem;
+    }
+    
+    .product-grid {
+        grid-template-columns: 1fr;
+        gap: 15px;
+    }
+}

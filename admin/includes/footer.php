@@ -7,23 +7,32 @@
 
     <!-- Enhanced Bootstrap functionality -->
     <script>
-        // SweetAlert Delete Confirmation Function
+        // Enhanced Delete Confirmation Function using SweetAlert
         function confirmDelete(id, name, page) {
-            Swal.fire({
-                title: 'Are you sure?',
-                text: `You won't be able to recover "${name}"!`,
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#d33',
-                cancelButtonColor: '#3085d6',
-                confirmButtonText: 'Yes, delete it!',
-                cancelButtonText: 'Cancel'
-            }).then((result) => {
-                if (result.isConfirmed) {
+            showSweetConfirmation(
+                'Are you sure?',
+                `You won't be able to recover "${name}"!`,
+                function() {
+                    // Show loading state
+                    Swal.fire({
+                        title: 'Deleting...',
+                        text: 'Please wait while we delete the item.',
+                        icon: 'info',
+                        allowOutsideClick: false,
+                        showConfirmButton: false,
+                        willOpen: () => {
+                            Swal.showLoading();
+                        }
+                    });
+                    
                     // Redirect to delete URL
                     window.location.href = page + '?deleteid=' + id;
+                },
+                {
+                    confirmButtonText: 'Yes, delete it!',
+                    confirmButtonColor: '#dc3545'
                 }
-            });
+            );
         }
 
         // Function to filter orders (placeholder for enhanced functionality)

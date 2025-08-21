@@ -463,16 +463,11 @@ include 'includes/header.php';
     <script src="../assets/js/admin.js"></script>
 
     <script>
-        // Show success/error messages
+        // Show success/error messages using Bootstrap alerts
         <?php if (isset($success_message)): ?>
-            Swal.fire({
-                icon: 'success',
-                title: 'Success!',
-                text: '<?php echo addslashes($success_message); ?>',
-                timer: 3000,
-                showConfirmButton: false
-            }).then(() => {
-                // Redirect back to the appropriate list page
+            showBootstrapAlert('<?php echo addslashes($success_message); ?>', 'success', 4000);
+            // Redirect back to the appropriate list page after a delay
+            setTimeout(() => {
                 <?php if ($editType == 'user'): ?>
                     window.location.href = 'user_list.php';
                 <?php elseif ($editType == 'menu'): ?>
@@ -480,15 +475,11 @@ include 'includes/header.php';
                 <?php elseif ($editType == 'event'): ?>
                     window.location.href = 'event_list.php';
                 <?php endif; ?>
-            });
+            }, 2000);
         <?php endif; ?>
 
         <?php if (isset($error_message)): ?>
-            Swal.fire({
-                icon: 'error',
-                title: 'Error!',
-                text: '<?php echo addslashes($error_message); ?>'
-            });
+            showBootstrapAlert('<?php echo addslashes($error_message); ?>', 'error', 6000);
         <?php endif; ?>
 
         // Form validation
@@ -508,11 +499,7 @@ include 'includes/header.php';
                         e.preventDefault();
                         e.stopPropagation();
                         
-                        Swal.fire({
-                            icon: 'error',
-                            title: 'Validation Error',
-                            text: 'Please fill in all required fields correctly.'
-                        });
+                        showBootstrapAlert('Please fill in all required fields correctly.', 'error', 5000);
                     }
                     form.classList.add('was-validated');
                 });

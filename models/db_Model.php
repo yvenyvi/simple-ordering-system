@@ -49,6 +49,57 @@ function save($table, $data, $id_field = null, $id_value = null){
         $sql_query = "UPDATE $table SET $set_string, updated_at = NOW() WHERE $id_field = '$escaped_id'";
         $result = mysqli_query($connection, $sql_query) or die(mysqli_error($connection));
         confirm_query($result);
+        
+        // Handle file upload for UPDATE operations too
+        if(isset($_FILES['fileField']) && $_FILES['fileField']['tmp_name']) {
+            $newname = "$id_value.jpg";
+            
+            // Determine upload directory based on table
+            $upload_dir = "../assets/images/";
+            switch($table) {
+                case 'menu':
+                    $upload_dir .= "products/";
+                    break;
+                case 'events':
+                    $upload_dir .= "events/";
+                    break;
+                case 'users':
+                    $upload_dir .= "users/";
+                    break;
+                default:
+                    $upload_dir .= "general/";
+                    break;
+            }
+            
+            $upload_path = $upload_dir . $newname;
+            
+            // Create directory if it doesn't exist
+            if (!file_exists($upload_dir)) {
+                mkdir($upload_dir, 0777, true);
+            }
+            
+            // Get old image to delete if update is successful
+            $old_image_sql = "SELECT image_url FROM $table WHERE $id_field = '$escaped_id'";
+            $old_image_result = mysqli_query($connection, $old_image_sql);
+            $old_image_row = mysqli_fetch_array($old_image_result);
+            $old_image_path = null;
+            if ($old_image_row && $old_image_row['image_url']) {
+                $old_image_path = '../' . $old_image_row['image_url'];
+            }
+            
+            if(move_uploaded_file($_FILES['fileField']['tmp_name'], $upload_path)) {
+                // Update the database with the new image URL
+                $image_url = str_replace("../", "", $upload_path);
+                $update_image_sql = "UPDATE $table SET image_url = '" . mysqli_real_escape_string($connection, $image_url) . "' WHERE $id_field = '$escaped_id'";
+                mysqli_query($connection, $update_image_sql);
+                
+                // Delete old image file if it exists and is not a placeholder
+                if ($old_image_path && file_exists($old_image_path) && strpos($old_image_path, 'placeholder.jpg') === false) {
+                    unlink($old_image_path);
+                }
+            }
+        }
+        
         return $id_value; // Return the existing ID for updates
         
     } else {
@@ -151,22 +202,48 @@ function display_all($sql, $column_mappings = null, $url = null, $display_mode =
                     }
                 }
                 
-                echo '<div class="product-card" data-category="' . htmlspecialchars($row['category'] ?? 'general') . '">';
+                if ($is_event) {
+                    echo '<div class="product-card event-card" data-category="' . htmlspecialchars($row['event_type']) . '">';
+                } else {
+                    echo '<div class="product-card" data-category="' . htmlspecialchars($row['category'] ?? 'general') . '">';
+                }
+                
                 echo '<img src="' . htmlspecialchars($image_src) . '" alt="' . htmlspecialchars($row['name'] ?? $row['event_name']) . '">';
-                echo '<h3>' . htmlspecialchars($row['name'] ?? $row['event_name']) . '</h3>';
-                echo '<p>' . htmlspecialchars($row['description']) . '</p>';
                 
-                if (!empty($row['preparation_time'])) {
-                    echo '<p class="prep-time"><i class="fas fa-clock"></i> ' . $row['preparation_time'] . ' min</p>';
-                }
-                
-                echo '<p class="price">$' . number_format($row['price'], 2) . '</p>';
-                
-                if ($is_menu) {
+                if ($is_event) {
+                    // Event-specific display
+                    echo '<div class="event-content">';
+                    echo '<h3>' . htmlspecialchars($row['event_name']) . '</h3>';
+                    echo '<p class="event-type"><i class="fas fa-tag"></i> ' . ucfirst($row['event_type']) . '</p>';
+                    
+                    $event_date = date("M d, Y", strtotime($row['event_date']));
+                    $event_time = date("g:i A", strtotime($row['event_time']));
+                    echo '<p class="event-datetime"><i class="fas fa-calendar"></i> ' . $event_date . ' at ' . $event_time . '</p>';
+                    echo '<p class="event-location"><i class="fas fa-map-marker-alt"></i> ' . htmlspecialchars($row['location']) . '</p>';
+                    
+                    if (!empty($row['description'])) {
+                        echo '<p class="event-description">' . htmlspecialchars($row['description']) . '</p>';
+                    }
+                    
+                    echo '<div class="event-details">';
+                    echo '<p class="event-capacity"><i class="fas fa-users"></i> Max ' . $row['capacity'] . ' people</p>';
+                    echo '<p class="event-price">$' . number_format($row['price'], 2) . ' per person</p>';
+                    echo '</div>';
+                    echo '<a href="#" class="btn event-btn" data-event-id="' . $row['event_id'] . '">Reserve Spot</a>';
+                    echo '</div>';
+                } else {
+                    // Menu item display
+                    echo '<h3>' . htmlspecialchars($row['name']) . '</h3>';
+                    echo '<p>' . htmlspecialchars($row['description']) . '</p>';
+                    
+                    if (!empty($row['preparation_time'])) {
+                        echo '<p class="prep-time"><i class="fas fa-clock"></i> ' . $row['preparation_time'] . ' min</p>';
+                    }
+                    
+                    echo '<p class="price">$' . number_format($row['price'], 2) . '</p>';
                     echo '<a href="#" class="btn" data-menu-id="' . $row['menu_id'] . '">Add to Cart</a>';
-                } elseif ($is_event) {
-                    echo '<a href="#" class="btn" data-event-id="' . $row['event_id'] . '">Reserve Spot</a>';
                 }
+                
                 echo '</div>';
                 
             } else {
@@ -244,52 +321,8 @@ function display_upcoming_events($limit = null) {
         $sql .= " LIMIT $limit";
     }
     
-    $result = mysqli_query($connection, $sql);
-    $rowCount = mysqli_num_rows($result);
-    
-    if ($rowCount > 0) {
-        while($row = mysqli_fetch_array($result)) {
-            // Determine the image source for events
-            $image_src = '../assets/images/events/placeholder.jpg'; // Default fallback
-            
-            if (!empty($row['image_url'])) {
-                if (file_exists($row['image_url'])) {
-                    $image_src = $row['image_url'];
-                } elseif (file_exists('../' . preg_replace('/^(\.\.\/)+/', '', $row['image_url']))) {
-                    $image_src = '../' . preg_replace('/^(\.\.\/)+/', '', $row['image_url']);
-                }
-            } elseif (file_exists("../assets/images/events/{$row['event_id']}.jpg")) {
-                $image_src = "../assets/images/events/{$row['event_id']}.jpg";
-            }
-            
-            $event_date = date("M d, Y", strtotime($row['event_date']));
-            $event_time = date("g:i A", strtotime($row['event_time']));
-            
-            echo '<div class="event-card">';
-            echo '<img src="' . htmlspecialchars($image_src) . '" alt="' . htmlspecialchars($row['event_name']) . '">';
-            echo '<div class="event-content">';
-            echo '<h3>' . htmlspecialchars($row['event_name']) . '</h3>';
-            echo '<p class="event-type"><i class="fas fa-tag"></i> ' . ucfirst($row['event_type']) . '</p>';
-            echo '<p class="event-datetime"><i class="fas fa-calendar"></i> ' . $event_date . ' at ' . $event_time . '</p>';
-            echo '<p class="event-location"><i class="fas fa-map-marker-alt"></i> ' . htmlspecialchars($row['location']) . '</p>';
-            if (!empty($row['description'])) {
-                echo '<p class="event-description">' . htmlspecialchars($row['description']) . '</p>';
-            }
-            echo '<div class="event-details">';
-            echo '<p class="event-capacity"><i class="fas fa-users"></i> Max ' . $row['capacity'] . ' people</p>';
-            echo '<p class="event-price">$' . number_format($row['price'], 2) . ' per person</p>';
-            echo '</div>';
-            echo '<a href="#" class="btn event-btn" data-event-id="' . $row['event_id'] . '">Reserve Spot</a>';
-            echo '</div>';
-            echo '</div>';
-        }
-    } else {
-        echo '<div class="no-events">';
-        echo '<i class="fas fa-calendar-times"></i>';
-        echo '<h3>No Upcoming Events</h3>';
-        echo '<p>Check back soon for exciting events and special dining experiences!</p>';
-        echo '</div>';
-    }
+    // Now use display_all with 'products' mode - it handles both menu and events
+    display_all($sql, null, null, 'products');
 }
 
 function display_featured_events($limit = 3) {

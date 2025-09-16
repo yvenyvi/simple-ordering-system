@@ -19,8 +19,18 @@ if (isset($_GET['deleteid'])) {
     mysqli_query($connection, $delete_sql);
     
     // Remove the image file if it exists and is not a placeholder
-    if ($image_row && $image_row['image_url'] && file_exists($image_row['image_url'])) {
-        unlink($image_row['image_url']);
+    if ($image_row && $image_row['image_url'] && strpos($image_row['image_url'], 'placeholder.jpg') === false) {
+        $image_path = $image_row['image_url'];
+        
+        // Handle both relative and absolute paths
+        if (!file_exists($image_path)) {
+            // Try relative path from current directory
+            $image_path = "../" . $image_row['image_url'];
+        }
+        
+        if (file_exists($image_path)) {
+            unlink($image_path);
+        }
     }
     
     redirect_to("menu_list.php");
@@ -73,6 +83,42 @@ if (isset($_POST['name'])) {
                     <button class="btn btn-primary" onclick="showAddMenuForm()">
                         <i class="fas fa-plus"></i> Add New Item
                     </button>
+                </div>
+
+                <!-- Filter Controls -->
+                <div class="filter-container">
+                    <div class="filter-grid">
+                        <div class="filter-group">
+                            <label for="category-filter">Category Filter</label>
+                            <select id="category-filter" class="form-select" onchange="applyFilters()">
+                                <option value="">All Categories</option>
+                                <option value="pizza">Pizza</option>
+                                <option value="burgers">Burgers</option>
+                                <option value="pasta">Pasta</option>
+                                <option value="salads">Salads</option>
+                                <option value="desserts">Desserts</option>
+                                <option value="beverages">Beverages</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label for="status-filter">Availability Status</label>
+                            <select id="status-filter" class="form-select" onchange="applyFilters()">
+                                <option value="">All Items</option>
+                                <option value="1">Available</option>
+                                <option value="0">Unavailable</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label for="search-filter">Search Menu Items</label>
+                            <input type="text" id="search-filter" class="form-control" placeholder="Search by name or description..." oninput="applyFilters()">
+                        </div>
+                        <div class="filter-group">
+                            <label>&nbsp;</label>
+                            <button type="button" class="btn btn-outline-secondary" onclick="clearFilters()">
+                                <i class="fas fa-times"></i> Clear Filters
+                            </button>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Add Menu Form -->
@@ -191,6 +237,84 @@ if (isset($_POST['name'])) {
                 showBootstrapAlert('<?php echo addslashes($error_message); ?>', 'error', 6000);
             <?php endif; ?>
         });
+
+        // Filter Functions
+        function applyFilters() {
+            const categoryFilter = document.getElementById('category-filter').value.toLowerCase();
+            const statusFilter = document.getElementById('status-filter').value;
+            const searchFilter = document.getElementById('search-filter').value.toLowerCase();
+            
+            const tableRows = document.querySelectorAll('.table tbody tr');
+            let visibleCount = 0;
+            
+            tableRows.forEach(row => {
+                let shouldShow = true;
+                
+                // Category filter
+                if (categoryFilter && shouldShow) {
+                    const categoryCell = row.cells[2]; // Category column
+                    if (categoryCell && !categoryCell.textContent.toLowerCase().includes(categoryFilter)) {
+                        shouldShow = false;
+                    }
+                }
+                
+                // Status filter
+                if (statusFilter !== '' && shouldShow) {
+                    const statusCell = row.cells[6]; // Availability column
+                    const isAvailable = statusCell && statusCell.textContent.includes('Available');
+                    if (statusFilter === '1' && !isAvailable) {
+                        shouldShow = false;
+                    } else if (statusFilter === '0' && isAvailable) {
+                        shouldShow = false;
+                    }
+                }
+                
+                // Search filter
+                if (searchFilter && shouldShow) {
+                    const nameCell = row.cells[1]; // Name column
+                    const descCell = row.cells[3]; // Description column
+                    const nameText = nameCell ? nameCell.textContent.toLowerCase() : '';
+                    const descText = descCell ? descCell.textContent.toLowerCase() : '';
+                    
+                    if (!nameText.includes(searchFilter) && !descText.includes(searchFilter)) {
+                        shouldShow = false;
+                    }
+                }
+                
+                if (shouldShow) {
+                    row.style.display = '';
+                    visibleCount++;
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+            
+            // Update results count
+            updateResultsCount(visibleCount, tableRows.length);
+        }
+        
+        function clearFilters() {
+            document.getElementById('category-filter').value = '';
+            document.getElementById('status-filter').value = '';
+            document.getElementById('search-filter').value = '';
+            applyFilters();
+        }
+        
+        function updateResultsCount(visible, total) {
+            let countDisplay = document.getElementById('results-count');
+            if (!countDisplay) {
+                countDisplay = document.createElement('div');
+                countDisplay.id = 'results-count';
+                countDisplay.className = 'results-count';
+                document.querySelector('.table-container').insertBefore(countDisplay, document.querySelector('.table'));
+            }
+            
+            if (visible === total) {
+                countDisplay.innerHTML = `<i class="fas fa-list"></i> Showing all ${total} menu items`;
+            } else {
+                countDisplay.innerHTML = `<i class="fas fa-filter"></i> Showing ${visible} of ${total} menu items`;
+            }
+        }
     </script>
 
     <?php include 'includes/footer.php'; ?>

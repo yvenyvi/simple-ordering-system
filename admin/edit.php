@@ -35,12 +35,15 @@ if (isset($_POST['update_menu'])) {
         'price' => floatval($_POST['price']),
         'ingredients' => $_POST['ingredients'],
         'preparation_time' => intval($_POST['preparation_time']),
-        'image_url' => $_POST['image_url'],
         'is_available' => isset($_POST['is_available']) ? 1 : 0
     );
     
     if (save('menu', $data, 'menu_id', $menu_id)) {
-        $success_message = "Menu item '{$_POST['name']}' has been successfully updated!";
+        if (isset($_FILES['fileField']) && $_FILES['fileField']['tmp_name']) {
+            $success_message = "Menu item '{$_POST['name']}' has been successfully updated with new image!";
+        } else {
+            $success_message = "Menu item '{$_POST['name']}' has been successfully updated!";
+        }
     } else {
         $error_message = "Failed to update menu item. Please try again.";
     }
@@ -65,7 +68,11 @@ if (isset($_POST['update_event'])) {
     );
     
     if (save('events', $data, 'event_id', $event_id)) {
-        $success_message = "Event '{$_POST['event_name']}' has been successfully updated!";
+        if (isset($_FILES['fileField']) && $_FILES['fileField']['tmp_name']) {
+            $success_message = "Event '{$_POST['event_name']}' has been successfully updated with new image!";
+        } else {
+            $success_message = "Event '{$_POST['event_name']}' has been successfully updated!";
+        }
     } else {
         $error_message = "Failed to update event. Please try again.";
     }
@@ -209,7 +216,7 @@ include 'includes/header.php';
                 </div>
 
                 <div class="form-container">
-                    <form action="edit.php" method="post" id="menuEditForm" novalidate>
+                    <form action="edit.php" method="post" enctype="multipart/form-data" id="menuEditForm" novalidate>
                         <input type="hidden" name="menu_id" value="<?php echo $editData['menu_id']; ?>" />
                         
                         <div class="form-grid">
@@ -270,11 +277,15 @@ include 'includes/header.php';
                         </div>
 
                         <div class="form-group">
-                            <label for="image_url">Image URL</label>
-                            <input type="url" id="image_url" name="image_url" class="form-control" 
-                                   value="<?php echo htmlspecialchars($editData['image_url']); ?>" 
-                                   maxlength="500">
-                            <small class="form-text text-muted">Optional image URL for the menu item.</small>
+                            <label for="fileField">Update Image</label>
+                            <input type="file" id="fileField" name="fileField" class="form-control" accept="image/*">
+                            <small class="form-text text-muted">Upload a new image to replace the current one. Supported formats: JPG, JPEG, PNG, GIF, WEBP.</small>
+                            <?php if (!empty($editData['image_url'])): ?>
+                                <div class="current-image" style="margin-top: 10px;">
+                                    <p><strong>Current Image:</strong></p>
+                                    <img src="../<?php echo htmlspecialchars($editData['image_url']); ?>" alt="Current menu image" style="max-width: 200px; max-height: 150px; border: 1px solid #ddd; border-radius: 4px;">
+                                </div>
+                            <?php endif; ?>
                         </div>
 
                         <div class="form-group checkbox-group">
@@ -306,7 +317,7 @@ include 'includes/header.php';
                 </div>
 
                 <div class="form-container">
-                    <form action="edit.php" method="post" id="eventEditForm" novalidate>
+                    <form action="edit.php" method="post" enctype="multipart/form-data" id="eventEditForm" novalidate>
                         <input type="hidden" name="event_id" value="<?php echo $editData['event_id']; ?>" />
                         
                         <div class="form-grid">
@@ -400,6 +411,18 @@ include 'includes/header.php';
                             <textarea id="requirements" name="requirements" class="form-control" rows="2" 
                                       maxlength="500"><?php echo htmlspecialchars($editData['requirements']); ?></textarea>
                             <small class="form-text text-muted">Optional requirements (max 500 characters).</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="fileField">Update Event Image</label>
+                            <input type="file" id="fileField" name="fileField" class="form-control" accept="image/*">
+                            <small class="form-text text-muted">Upload a new image to replace the current one. Supported formats: JPG, JPEG, PNG, GIF, WEBP.</small>
+                            <?php if (!empty($editData['image_url'])): ?>
+                                <div class="current-image" style="margin-top: 10px;">
+                                    <p><strong>Current Image:</strong></p>
+                                    <img src="../<?php echo htmlspecialchars($editData['image_url']); ?>" alt="Current event image" style="max-width: 200px; max-height: 150px; border: 1px solid #ddd; border-radius: 4px;">
+                                </div>
+                            <?php endif; ?>
                         </div>
 
                         <div class="form-group checkbox-group">

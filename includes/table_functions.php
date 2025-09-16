@@ -35,7 +35,23 @@ function display_menu_table($sql) {
         echo '<tbody>';
         
         while($row = mysqli_fetch_array($result)) {
-            $image_path = isset($row['image_url']) && !empty($row['image_url']) ? $row['image_url'] : '../assets/images/products/placeholder.jpg';
+            // Handle image path properly - add ../ if it's a relative path from assets/
+            $image_path = '../assets/images/products/placeholder.jpg'; // Default fallback
+            
+            if (isset($row['image_url']) && !empty($row['image_url'])) {
+                // If image_url starts with 'assets/', add '../' to make it work from admin directory
+                if (strpos($row['image_url'], 'assets/') === 0) {
+                    $image_path = '../' . $row['image_url'];
+                } else {
+                    $image_path = $row['image_url'];
+                }
+                
+                // Check if file actually exists, if not use placeholder
+                if (!file_exists($image_path)) {
+                    $image_path = '../assets/images/products/placeholder.jpg';
+                }
+            }
+            
             $status_class = $row['is_available'] == 1 ? 'status-active' : 'status-inactive';
             $status_text = $row['is_available'] == 1 ? 'Available' : 'Unavailable';
             
@@ -180,7 +196,23 @@ function display_events_table($sql) {
         echo '<tbody>';
         
         while($row = mysqli_fetch_array($result)) {
-            $image_path = isset($row['image_url']) && !empty($row['image_url']) ? $row['image_url'] : '../assets/images/events/placeholder.jpg';
+            // Handle image path properly - add ../ if it's a relative path from assets/
+            $image_path = '../assets/images/events/placeholder.jpg'; // Default fallback
+            
+            if (isset($row['image_url']) && !empty($row['image_url'])) {
+                // If image_url starts with 'assets/', add '../' to make it work from admin directory
+                if (strpos($row['image_url'], 'assets/') === 0) {
+                    $image_path = '../' . $row['image_url'];
+                } else {
+                    $image_path = $row['image_url'];
+                }
+                
+                // Check if file actually exists, if not use placeholder
+                if (!file_exists($image_path)) {
+                    $image_path = '../assets/images/events/placeholder.jpg';
+                }
+            }
+            
             $status_class = $row['is_active'] == 1 ? 'status-active' : 'status-inactive';
             $status_text = $row['is_active'] == 1 ? 'Active' : 'Inactive';
             $event_date = date("M d, Y", strtotime($row['event_date']));

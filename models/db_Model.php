@@ -23,8 +23,12 @@ function confirm_query($result_set){
     }
 }
 
-function save($table, $data, $id_field = null, $id_value = null){
+function save($table, $data){
     global $connection;
+    
+    // NOTE: UPDATE functionality has been temporarily disabled
+    // This function now only supports INSERT operations
+    // UPDATE functionality coming soon...
     
     // Escape all data values
     $escaped_data = array();
@@ -35,74 +39,6 @@ function save($table, $data, $id_field = null, $id_value = null){
             $escaped_data[$field] = "'" . mysqli_real_escape_string($connection, $value) . "'";
         }
     }
-    
-    // Determine if this is an INSERT or UPDATE operation
-    if ($id_field && $id_value) {
-        // UPDATE operation
-        $set_clauses = array();
-        foreach ($escaped_data as $field => $value) {
-            $set_clauses[] = "$field = $value";
-        }
-        $set_string = implode(", ", $set_clauses);
-        $escaped_id = mysqli_real_escape_string($connection, $id_value);
-        
-        $sql_query = "UPDATE $table SET $set_string, updated_at = NOW() WHERE $id_field = '$escaped_id'";
-        $result = mysqli_query($connection, $sql_query) or die(mysqli_error($connection));
-        confirm_query($result);
-        
-        // Handle file upload for UPDATE operations too
-        if(isset($_FILES['fileField']) && $_FILES['fileField']['tmp_name']) {
-            $newname = "$id_value.jpg";
-            
-            // Determine upload directory based on table
-            $upload_dir = "../assets/images/";
-            switch($table) {
-                case 'menu':
-                    $upload_dir .= "products/";
-                    break;
-                case 'events':
-                    $upload_dir .= "events/";
-                    break;
-                case 'users':
-                    $upload_dir .= "users/";
-                    break;
-                default:
-                    $upload_dir .= "general/";
-                    break;
-            }
-            
-            $upload_path = $upload_dir . $newname;
-            
-            // Create directory if it doesn't exist
-            if (!file_exists($upload_dir)) {
-                mkdir($upload_dir, 0777, true);
-            }
-            
-            // Get old image to delete if update is successful
-            $old_image_sql = "SELECT image_url FROM $table WHERE $id_field = '$escaped_id'";
-            $old_image_result = mysqli_query($connection, $old_image_sql);
-            $old_image_row = mysqli_fetch_array($old_image_result);
-            $old_image_path = null;
-            if ($old_image_row && $old_image_row['image_url']) {
-                $old_image_path = '../' . $old_image_row['image_url'];
-            }
-            
-            if(move_uploaded_file($_FILES['fileField']['tmp_name'], $upload_path)) {
-                // Update the database with the new image URL
-                $image_url = str_replace("../", "", $upload_path);
-                $update_image_sql = "UPDATE $table SET image_url = '" . mysqli_real_escape_string($connection, $image_url) . "' WHERE $id_field = '$escaped_id'";
-                mysqli_query($connection, $update_image_sql);
-                
-                // Delete old image file if it exists and is not a placeholder
-                if ($old_image_path && file_exists($old_image_path) && strpos($old_image_path, 'placeholder.jpg') === false) {
-                    unlink($old_image_path);
-                }
-            }
-        }
-        
-        return $id_value; // Return the existing ID for updates
-        
-    } else {
         // INSERT operation
         $fields = implode(", ", array_keys($escaped_data));
         $values = implode(", ", array_values($escaped_data));
@@ -111,46 +47,21 @@ function save($table, $data, $id_field = null, $id_value = null){
         $result = mysqli_query($connection, $sql_query) or die(mysqli_error($connection));
         $new_id = mysqli_insert_id($connection);
         
-        // Handle file upload if exists (for INSERT operations)
         if(isset($_FILES['fileField']) && $_FILES['fileField']['tmp_name']) {
             $newname = "$new_id.jpg";
             
-            // Determine upload directory based on table
-            $upload_dir = "../assets/images/";
-            switch($table) {
-                case 'menu':
-                    $upload_dir .= "products/";
-                    break;
-                case 'events':
-                    $upload_dir .= "events/";
-                    break;
-                case 'users':
-                    $upload_dir .= "users/";
-                    break;
-                default:
-                    $upload_dir .= "general/";
-                    break;
-            }
-            
+            // Use helper function for flexible directory handling
+            $upload_dir = get_upload_directory($table);
             $upload_path = $upload_dir . $newname;
             
-            // Create directory if it doesn't exist
             if (!file_exists($upload_dir)) {
                 mkdir($upload_dir, 0777, true);
             }
             
             if(move_uploaded_file($_FILES['fileField']['tmp_name'], $upload_path)) {
-                // Determine the correct ID field name
-                $id_field_name = $table . '_id';
-                if ($table === 'users') {
-                    $id_field_name = 'user_id';
-                } elseif ($table === 'menu') {
-                    $id_field_name = 'menu_id';
-                } elseif ($table === 'events') {
-                    $id_field_name = 'event_id';
-                }
+                // Use helper function for flexible ID field handling
+                $id_field_name = get_id_field_name($table);
                 
-                // Update the database with the image URL (relative path from web root)
                 $image_url = str_replace("../", "", $upload_path);
                 $update_sql = "UPDATE $table SET image_url = '" . mysqli_real_escape_string($connection, $image_url) . "' WHERE $id_field_name = '$new_id'";
                 mysqli_query($connection, $update_sql);
@@ -158,7 +69,44 @@ function save($table, $data, $id_field = null, $id_value = null){
         }
         
         confirm_query($result);
-        return $new_id; // Return the new ID for inserts
+        return $new_id;
+    }
+
+// Helper function to automatically determine upload directory for any table
+function get_upload_directory($table) {
+    $base_dir = "../assets/images/";
+    
+    // Map table names to their respective directories
+    $directory_map = array(
+        'menu' => 'products/',
+        'events' => 'events/',
+        'users' => 'users/'
+    );
+    
+    // Return mapped directory or default to table name + '/'
+    if (isset($directory_map[$table])) {
+        return $base_dir . $directory_map[$table];
+    } else {
+        // For new modules, automatically create directory based on table name
+        return $base_dir . $table . '/';
+    }
+}
+
+// Helper function to automatically determine ID field name for any table
+function get_id_field_name($table) {
+    // Map table names to their primary key field names
+    $id_field_map = array(
+        'users' => 'user_id',
+        'menu' => 'menu_id',
+        'events' => 'event_id'
+    );
+    
+    // Return mapped ID field or default to table_name + '_id'
+    if (isset($id_field_map[$table])) {
+        return $id_field_map[$table];
+    } else {
+        // For new modules, automatically use table_name + '_id' convention
+        return $table . '_id';
     }
 }
 

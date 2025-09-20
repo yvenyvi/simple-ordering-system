@@ -85,42 +85,6 @@ if (isset($_POST['name'])) {
                     </button>
                 </div>
 
-                <!-- Filter Controls -->
-                <div class="filter-container">
-                    <div class="filter-grid">
-                        <div class="filter-group">
-                            <label for="category-filter">Category Filter</label>
-                            <select id="category-filter" class="form-select" onchange="applyFilters()">
-                                <option value="">All Categories</option>
-                                <option value="pizza">Pizza</option>
-                                <option value="burgers">Burgers</option>
-                                <option value="pasta">Pasta</option>
-                                <option value="salads">Salads</option>
-                                <option value="desserts">Desserts</option>
-                                <option value="beverages">Beverages</option>
-                            </select>
-                        </div>
-                        <div class="filter-group">
-                            <label for="status-filter">Availability Status</label>
-                            <select id="status-filter" class="form-select" onchange="applyFilters()">
-                                <option value="">All Items</option>
-                                <option value="1">Available</option>
-                                <option value="0">Unavailable</option>
-                            </select>
-                        </div>
-                        <div class="filter-group">
-                            <label for="search-filter">Search Menu Items</label>
-                            <input type="text" id="search-filter" class="form-control" placeholder="Search by name or description..." oninput="applyFilters()">
-                        </div>
-                        <div class="filter-group">
-                            <label>&nbsp;</label>
-                            <button type="button" class="btn btn-outline-secondary" onclick="clearFilters()">
-                                <i class="fas fa-times"></i> Clear Filters
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
                 <!-- Add Menu Form -->
                 <div id="add-menu-form" class="form-container" style="display: none;">
                     <h3>Add New Menu Item</h3>

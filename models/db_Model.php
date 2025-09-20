@@ -72,161 +72,81 @@ function save($table, $data){
         return $new_id;
     }
 
-// Helper function to automatically determine upload directory for any table
 function get_upload_directory($table) {
     $base_dir = "../assets/images/";
     
-    // Map table names to their respective directories
     $directory_map = array(
-        'menu' => 'products/',
-        'events' => 'events/',
-        'users' => 'users/'
+        'menu' => 'products/'
     );
-    
-    // Return mapped directory or default to table name + '/'
+
     if (isset($directory_map[$table])) {
         return $base_dir . $directory_map[$table];
     } else {
-        // For new modules, automatically create directory based on table name
         return $base_dir . $table . '/';
     }
 }
 
-// Helper function to automatically determine ID field name for any table
 function get_id_field_name($table) {
-    // Map table names to their primary key field names
     $id_field_map = array(
         'users' => 'user_id',
         'menu' => 'menu_id',
         'events' => 'event_id'
     );
     
-    // Return mapped ID field or default to table_name + '_id'
     if (isset($id_field_map[$table])) {
         return $id_field_map[$table];
     } else {
-        // For new modules, automatically use table_name + '_id' convention
         return $table . '_id';
     }
 }
 
-function display_all($sql, $column_mappings = null, $url = null, $display_mode = 'admin'){
-    global $connection;
-    $output_list = "";
-    $result = mysqli_query($connection, $sql);
-
-    $rowCount = mysqli_num_rows($result);
-
-    if ($rowCount > 0) {
-        while($row = mysqli_fetch_array($result)){ 
-            
-            // User-side product card display
-            if ($display_mode === 'user' || $display_mode === 'products') {
-                // Determine the image source based on content type
-                $image_src = '../assets/images/products/placeholder.jpg'; // Default fallback
-                
-                // Determine if this is a menu item or event based on available fields
-                $is_event = isset($row['event_id']);
-                $is_menu = isset($row['menu_id']);
-                
-                if ($is_event) {
-                    $image_src = '../assets/images/events/placeholder.jpg';
-                } elseif ($is_menu) {
-                    $image_src = '../assets/images/products/placeholder.jpg';
-                }
-                
-                if (!empty($row['image_url'])) {
-                    if (file_exists($row['image_url'])) {
-                        $image_src = $row['image_url'];
-                    } elseif (file_exists('../' . preg_replace('/^(\.\.\/)+/', '', $row['image_url']))) {
-                        $image_src = '../' . preg_replace('/^(\.\.\/)+/', '', $row['image_url']);
-                    }
-                } else {
-                    // Fallback to ID-based image naming
-                    if ($is_event && file_exists("../assets/images/events/{$row['event_id']}.jpg")) {
-                        $image_src = "../assets/images/events/{$row['event_id']}.jpg";
-                    } elseif ($is_menu && file_exists("../assets/images/products/{$row['menu_id']}.jpg")) {
-                        $image_src = "../assets/images/products/{$row['menu_id']}.jpg";
-                    }
-                }
-                
-                if ($is_event) {
-                    echo '<div class="product-card event-card" data-category="' . htmlspecialchars($row['event_type']) . '">';
-                } else {
-                    echo '<div class="product-card" data-category="' . htmlspecialchars($row['category'] ?? 'general') . '">';
-                }
-                
-                echo '<img src="' . htmlspecialchars($image_src) . '" alt="' . htmlspecialchars($row['name'] ?? $row['event_name']) . '">';
-                
-                if ($is_event) {
-                    // Event-specific display
-                    echo '<div class="event-content">';
-                    echo '<h3>' . htmlspecialchars($row['event_name']) . '</h3>';
-                    echo '<p class="event-type"><i class="fas fa-tag"></i> ' . ucfirst($row['event_type']) . '</p>';
-                    
-                    $event_date = date("M d, Y", strtotime($row['event_date']));
-                    $event_time = date("g:i A", strtotime($row['event_time']));
-                    echo '<p class="event-datetime"><i class="fas fa-calendar"></i> ' . $event_date . ' at ' . $event_time . '</p>';
-                    echo '<p class="event-location"><i class="fas fa-map-marker-alt"></i> ' . htmlspecialchars($row['location']) . '</p>';
-                    
-                    if (!empty($row['description'])) {
-                        echo '<p class="event-description">' . htmlspecialchars($row['description']) . '</p>';
-                    }
-                    
-                    echo '<div class="event-details">';
-                    echo '<p class="event-capacity"><i class="fas fa-users"></i> Max ' . $row['capacity'] . ' people</p>';
-                    echo '<p class="event-price">$' . number_format($row['price'], 2) . ' per person</p>';
-                    echo '</div>';
-                    echo '<a href="#" class="btn event-btn" data-event-id="' . $row['event_id'] . '">Reserve Spot</a>';
-                    echo '</div>';
-                } else {
-                    // Menu item display
-                    echo '<h3>' . htmlspecialchars($row['name']) . '</h3>';
-                    echo '<p>' . htmlspecialchars($row['description']) . '</p>';
-                    
-                    if (!empty($row['preparation_time'])) {
-                        echo '<p class="prep-time"><i class="fas fa-clock"></i> ' . $row['preparation_time'] . ' min</p>';
-                    }
-                    
-                    echo '<p class="price">$' . number_format($row['price'], 2) . '</p>';
-                    echo '<a href="#" class="btn" data-menu-id="' . $row['menu_id'] . '">Add to Cart</a>';
-                }
-                
-                echo '</div>';
-                
-            } else {
-                // Admin-side list display
-                if ($column_mappings) {
-                    foreach ($column_mappings as $column_name => $label) {
-                        $value = $row[$column_name];
-                        if (strpos($column_name, 'date') !== false) {
-                            $value = date("M d, Y", strtotime($value));
-                        }
-                        $output_list .= "<strong>$label </strong> $value &nbsp; ";
-                    }
-                    
-                    $id = $row['user_id'] ?? $row['menu_id'] ?? $row['event_id'] ?? $row['id'];
-                    $output_list .= "<a href='edit.php?editid=$id'>edit</a> &bull; <a href='$url?deleteid=$id'>delete</a><br />";
-                }
-            }
-        }
-        
-        // For admin display, echo the accumulated output
-        if ($display_mode === 'admin' && $column_mappings !== null) {
-            echo $output_list;
-        }
-        
-    } else {
-        if ($display_mode === 'user' || $display_mode === 'products') {
-            // User-side no items message
-            echo '<div class="no-items">';
-            echo '<p>No menu items found.</p>';
-            echo '</div>';
-        } else {
-            // Admin-side no records message
-            echo "No records found.";
+function get_image_path($row, $table) {
+    // Use helper functions for consistency
+    $base_dir = get_upload_directory($table);
+    $id_field = get_id_field_name($table);
+    $id = $row[$id_field] ?? $row['id'] ?? null;
+    $placeholder = $base_dir . 'placeholder.jpg';
+    
+    if (!empty($row['image_url'])) {
+        if (file_exists($row['image_url'])) {
+            return $row['image_url'];
+        } elseif (file_exists('../' . preg_replace('/^(\.\.\/)+/', '', $row['image_url']))) {
+            return '../' . preg_replace('/^(\.\.\/)+/', '', $row['image_url']);
         }
     }
+    
+    if ($id && file_exists($base_dir . $id . '.jpg')) {
+        return $base_dir . $id . '.jpg';
+    }
+    
+    return $placeholder;
+}
+
+function display_admin_list($sql, $column_mappings, $edit_url) {
+    global $connection;
+    $result = mysqli_query($connection, $sql);
+    $rowCount = mysqli_num_rows($result);
+    
+    if ($rowCount === 0) {
+        echo "No records found.";
+        return;
+    }
+    
+    $output = "";
+    while ($row = mysqli_fetch_array($result)) {
+        foreach ($column_mappings as $column_name => $label) {
+            $value = $row[$column_name];
+            if (strpos($column_name, 'date') !== false) {
+                $value = date("M d, Y", strtotime($value));
+            }
+            $output .= "<strong>$label</strong> $value &nbsp; ";
+        }
+        
+        $id = $row['user_id'] ?? $row['menu_id'] ?? $row['event_id'] ?? $row['id'];
+        $output .= "<a href='edit.php?editid=$id'>edit</a> &bull; <a href='$edit_url?deleteid=$id'>delete</a><br />";
+    }
+    
+    echo $output;
 }
 
 function delete_record($table, $id_field, $id_value) {
@@ -237,92 +157,45 @@ function delete_record($table, $id_field, $id_value) {
     return $result;
 }
 
-// Helper functions for user-side display with column mapping support
-function display_menu_products($category = null) {
-    global $connection;
-    
-    $sql = "SELECT * FROM menu WHERE is_available = 1";
-    
-    if ($category && $category !== 'all') {
-        $escaped_category = mysqli_real_escape_string($connection, $category);
-        $sql .= " AND category = '$escaped_category'";
-    }
-    
-    $sql .= " ORDER BY name ASC";
-    
-    // Use display_all with 'products' mode for user display
-    display_all($sql, null, null, 'products');
-}
-
-function display_featured_products($limit = 4) {
-    $sql = "SELECT * FROM menu WHERE is_available = 1 ORDER BY created_at DESC LIMIT $limit";
-    display_all($sql, null, null, 'products');
-}
-
-// Helper function for user-side event display
-function display_upcoming_events($limit = null) {
-    global $connection;
-    
-    $sql = "SELECT * FROM events WHERE is_active = 1 AND event_date >= CURDATE() ORDER BY event_date ASC, event_time ASC";
-    
-    if ($limit) {
-        $sql .= " LIMIT $limit";
-    }
-    
-    // Now use display_all with 'products' mode - it handles both menu and events
-    display_all($sql, null, null, 'products');
-}
-
-function display_featured_events($limit = 3) {
-    display_upcoming_events($limit);
-}
-
-// Admin functions with column mapping
-function display_admin_menu($sql = null) {
-    if (!$sql) {
-        $sql = "SELECT * FROM menu ORDER BY created_at DESC";
-    }
-    
-    $column_mappings = array(
-        'name' => 'Menu Item',
-        'category' => 'Category',
-        'price' => 'Price',
-        'is_available' => 'Status',
-        'created_at' => 'Added'
+function display_admin_table($table, $sql = null) {
+    // Default column mappings for common tables
+    $default_mappings = array(
+        'menu' => array(
+            'columns' => array('name' => 'Menu Item', 'category' => 'Category', 'price' => 'Price', 'is_available' => 'Status', 'created_at' => 'Added'),
+            'order' => 'created_at DESC'
+        ),
+        'users' => array(
+            'columns' => array('first_name' => 'First Name', 'last_name' => 'Last Name', 'email' => 'Email', 'phone' => 'Phone', 'created_at' => 'Joined'),
+            'order' => 'created_at DESC'
+        ),
+        'events' => array(
+            'columns' => array('event_name' => 'Event', 'event_type' => 'Type', 'event_date' => 'Date', 'location' => 'Location', 'capacity' => 'Capacity', 'price' => 'Price'),
+            'order' => 'event_date ASC'
+        )
     );
     
-    display_all($sql, $column_mappings, 'menu_list.php', 'admin');
-}
-
-function display_admin_users($sql = null) {
+    // Use provided SQL or build default
     if (!$sql) {
-        $sql = "SELECT * FROM users ORDER BY created_at DESC";
+        $order = isset($default_mappings[$table]) ? $default_mappings[$table]['order'] : 'created_at DESC';
+        $sql = "SELECT * FROM $table ORDER BY $order";
     }
     
-    $column_mappings = array(
-        'first_name' => 'First Name',
-        'last_name' => 'Last Name',
-        'email' => 'Email',
-        'phone' => 'Phone',
-        'created_at' => 'Joined'
-    );
+    $column_mappings = isset($default_mappings[$table]) ? $default_mappings[$table]['columns'] : array('name' => 'Name', 'created_at' => 'Created');
     
-    display_all($sql, $column_mappings, 'user_list.php', 'admin');
+    $edit_url = $table . '_list.php';
+    display_admin_list($sql, $column_mappings, $edit_url);
 }
 
+// Flexible delete handler that works with any module
 if (isset($_GET['deleteid'])) {
     $delete_id = $_GET['deleteid'];
     $current_page = basename($_SERVER['PHP_SELF']);
     
-    if($current_page == 'user_list.php') {
-        delete_record('users', 'user_id', $delete_id);
-        redirect_to("user_list.php");
-    } elseif($current_page == 'menu_list.php') {
-        delete_record('menu', 'menu_id', $delete_id);
-        redirect_to("menu_list.php");
-    } elseif($current_page == 'event_list.php') {
-        delete_record('events', 'event_id', $delete_id);
-        redirect_to("event_list.php");
-    }
+    $table = str_replace('_list.php', '', $current_page);
+    
+    $id_field = get_id_field_name($table);
+    
+    delete_record($table, $id_field, $delete_id);
+    redirect_to($current_page);
 }
 ?>

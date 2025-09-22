@@ -87,17 +87,8 @@ function get_upload_directory($table) {
 }
 
 function get_id_field_name($table) {
-    $id_field_map = array(
-        'users' => 'user_id',
-        'menu' => 'menu_id',
-        'events' => 'event_id'
-    );
-    
-    if (isset($id_field_map[$table])) {
-        return $id_field_map[$table];
-    } else {
-        return $table . '_id';
-    }
+    // Simple convention: table_name + '_id'
+    return $table . '_id';
 }
 
 function get_image_path($row, $table) {
@@ -122,31 +113,41 @@ function get_image_path($row, $table) {
     return $placeholder;
 }
 
-function display_admin_list($sql, $column_mappings, $edit_url) {
-    global $connection;
-    $result = mysqli_query($connection, $sql);
-    $rowCount = mysqli_num_rows($result);
-    
-    if ($rowCount === 0) {
-        echo "No records found.";
-        return;
+/**
+ * Universal admin table display function
+ * Works with ANY database table using the table helper for rich UI
+ */
+function display_table($table_name, $sql = null) {
+    // If no SQL provided, build a default one
+    if (!$sql) {
+        $sql = "SELECT * FROM `$table_name` ORDER BY created_at DESC";
     }
     
-    $output = "";
-    while ($row = mysqli_fetch_array($result)) {
-        foreach ($column_mappings as $column_name => $label) {
-            $value = $row[$column_name];
-            if (strpos($column_name, 'date') !== false) {
-                $value = date("M d, Y", strtotime($value));
-            }
-            $output .= "<strong>$label</strong> $value &nbsp; ";
-        }
-        
-        $id = $row['user_id'] ?? $row['menu_id'] ?? $row['event_id'] ?? $row['id'];
-        $output .= "<a href='edit.php?editid=$id'>edit</a> &bull; <a href='$edit_url?deleteid=$id'>delete</a><br />";
+    // Load the table helper functions if not already loaded
+    if (!function_exists('display_admin_table_view')) {
+        require_once dirname(__FILE__) . '/../admin/helpers/table_helper.php';
     }
     
-    echo $output;
+    // Use the table helper to display the rich UI
+    display_admin_table_view($table_name, $sql);
+}
+
+/**
+ * Convenience functions for backward compatibility and common tables
+ */
+function display_menu_table($sql = null) {
+    $sql = $sql ?: "SELECT * FROM menu ORDER BY created_at DESC";
+    display_table('menu', $sql);
+}
+
+function display_users_table($sql = null) {
+    $sql = $sql ?: "SELECT * FROM users ORDER BY created_at DESC";
+    display_table('users', $sql);
+}
+
+function display_events_table($sql = null) {
+    $sql = $sql ?: "SELECT * FROM events ORDER BY event_date ASC";
+    display_table('events', $sql);
 }
 
 function delete_record($table, $id_field, $id_value) {
@@ -155,35 +156,6 @@ function delete_record($table, $id_field, $id_value) {
     $result = mysqli_query($connection, $sql) or die(mysqli_error($connection));
     confirm_query($result);
     return $result;
-}
-
-function display_admin_table($table, $sql = null) {
-    // Default column mappings for common tables
-    $default_mappings = array(
-        'menu' => array(
-            'columns' => array('name' => 'Menu Item', 'category' => 'Category', 'price' => 'Price', 'is_available' => 'Status', 'created_at' => 'Added'),
-            'order' => 'created_at DESC'
-        ),
-        'users' => array(
-            'columns' => array('first_name' => 'First Name', 'last_name' => 'Last Name', 'email' => 'Email', 'phone' => 'Phone', 'created_at' => 'Joined'),
-            'order' => 'created_at DESC'
-        ),
-        'events' => array(
-            'columns' => array('event_name' => 'Event', 'event_type' => 'Type', 'event_date' => 'Date', 'location' => 'Location', 'capacity' => 'Capacity', 'price' => 'Price'),
-            'order' => 'event_date ASC'
-        )
-    );
-    
-    // Use provided SQL or build default
-    if (!$sql) {
-        $order = isset($default_mappings[$table]) ? $default_mappings[$table]['order'] : 'created_at DESC';
-        $sql = "SELECT * FROM $table ORDER BY $order";
-    }
-    
-    $column_mappings = isset($default_mappings[$table]) ? $default_mappings[$table]['columns'] : array('name' => 'Name', 'created_at' => 'Created');
-    
-    $edit_url = $table . '_list.php';
-    display_admin_list($sql, $column_mappings, $edit_url);
 }
 
 // Flexible delete handler that works with any module

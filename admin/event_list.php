@@ -1,8 +1,7 @@
 <?php
 $page_title = "Event Management";
 include 'includes/header.php';
-require_once "../models/db_Model.php";
-require_once "../includes/table_functions.php";
+require_once "../models/db_Model.php"; // Now includes universal table display function
 
 // Handle delete request
 if (isset($_GET['deleteid'])) {

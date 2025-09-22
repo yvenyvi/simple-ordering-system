@@ -1,8 +1,7 @@
 <?php
 $page_title = "User Management";
 include 'includes/header.php';
-require_once "../models/db_Model.php";
-require_once "../includes/table_functions.php";
+require_once "../models/db_Model.php"; // Now includes universal table display function
 
 if (isset($_POST['first_name'])){
     $data = array(

@@ -14,6 +14,7 @@
     include '../includes/header.php';
     include '../includes/sidebar.php';
     require_once '../models/db_Model.php';
+    require_once '../models/user_display_model.php';
     
     // Get category filter from URL
     $selected_category = isset($_GET['category']) ? $_GET['category'] : 'all';

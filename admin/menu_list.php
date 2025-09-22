@@ -1,8 +1,7 @@
 <?php
 $page_title = "Menu Management";
 include 'includes/header.php';
-require_once "../models/db_Model.php";
-require_once "../includes/table_functions.php";
+require_once "../models/db_Model.php"; // Now includes universal table display function
 
 // Handle delete request
 if (isset($_GET['deleteid'])) {
@@ -19,8 +18,18 @@ if (isset($_GET['deleteid'])) {
     mysqli_query($connection, $delete_sql);
     
     // Remove the image file if it exists and is not a placeholder
-    if ($image_row && $image_row['image_url'] && file_exists($image_row['image_url'])) {
-        unlink($image_row['image_url']);
+    if ($image_row && $image_row['image_url'] && strpos($image_row['image_url'], 'placeholder.jpg') === false) {
+        $image_path = $image_row['image_url'];
+        
+        // Handle both relative and absolute paths
+        if (!file_exists($image_path)) {
+            // Try relative path from current directory
+            $image_path = "../" . $image_row['image_url'];
+        }
+        
+        if (file_exists($image_path)) {
+            unlink($image_path);
+        }
     }
     
     redirect_to("menu_list.php");
@@ -191,6 +200,84 @@ if (isset($_POST['name'])) {
                 showBootstrapAlert('<?php echo addslashes($error_message); ?>', 'error', 6000);
             <?php endif; ?>
         });
+
+        // Filter Functions
+        function applyFilters() {
+            const categoryFilter = document.getElementById('category-filter').value.toLowerCase();
+            const statusFilter = document.getElementById('status-filter').value;
+            const searchFilter = document.getElementById('search-filter').value.toLowerCase();
+            
+            const tableRows = document.querySelectorAll('.table tbody tr');
+            let visibleCount = 0;
+            
+            tableRows.forEach(row => {
+                let shouldShow = true;
+                
+                // Category filter
+                if (categoryFilter && shouldShow) {
+                    const categoryCell = row.cells[2]; // Category column
+                    if (categoryCell && !categoryCell.textContent.toLowerCase().includes(categoryFilter)) {
+                        shouldShow = false;
+                    }
+                }
+                
+                // Status filter
+                if (statusFilter !== '' && shouldShow) {
+                    const statusCell = row.cells[6]; // Availability column
+                    const isAvailable = statusCell && statusCell.textContent.includes('Available');
+                    if (statusFilter === '1' && !isAvailable) {
+                        shouldShow = false;
+                    } else if (statusFilter === '0' && isAvailable) {
+                        shouldShow = false;
+                    }
+                }
+                
+                // Search filter
+                if (searchFilter && shouldShow) {
+                    const nameCell = row.cells[1]; // Name column
+                    const descCell = row.cells[3]; // Description column
+                    const nameText = nameCell ? nameCell.textContent.toLowerCase() : '';
+                    const descText = descCell ? descCell.textContent.toLowerCase() : '';
+                    
+                    if (!nameText.includes(searchFilter) && !descText.includes(searchFilter)) {
+                        shouldShow = false;
+                    }
+                }
+                
+                if (shouldShow) {
+                    row.style.display = '';
+                    visibleCount++;
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+            
+            // Update results count
+            updateResultsCount(visibleCount, tableRows.length);
+        }
+        
+        function clearFilters() {
+            document.getElementById('category-filter').value = '';
+            document.getElementById('status-filter').value = '';
+            document.getElementById('search-filter').value = '';
+            applyFilters();
+        }
+        
+        function updateResultsCount(visible, total) {
+            let countDisplay = document.getElementById('results-count');
+            if (!countDisplay) {
+                countDisplay = document.createElement('div');
+                countDisplay.id = 'results-count';
+                countDisplay.className = 'results-count';
+                document.querySelector('.table-container').insertBefore(countDisplay, document.querySelector('.table'));
+            }
+            
+            if (visible === total) {
+                countDisplay.innerHTML = `<i class="fas fa-list"></i> Showing all ${total} menu items`;
+            } else {
+                countDisplay.innerHTML = `<i class="fas fa-filter"></i> Showing ${visible} of ${total} menu items`;
+            }
+        }
     </script>
 
     <?php include 'includes/footer.php'; ?>

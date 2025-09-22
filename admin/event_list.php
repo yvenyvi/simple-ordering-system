@@ -1,8 +1,7 @@
 <?php
 $page_title = "Event Management";
 include 'includes/header.php';
-require_once "../models/db_Model.php";
-require_once "../includes/table_functions.php";
+require_once "../models/db_Model.php"; // Now includes universal table display function
 
 // Handle delete request
 if (isset($_GET['deleteid'])) {
@@ -18,8 +17,18 @@ if (isset($_GET['deleteid'])) {
     mysqli_query($connection, $delete_sql);
     
     // Remove the image file if it exists and is not a placeholder
-    if ($image_row && $image_row['image_url'] && file_exists($image_row['image_url']) && strpos($image_row['image_url'], 'placeholder.jpg') === false) {
-        unlink($image_row['image_url']);
+    if ($image_row && $image_row['image_url'] && strpos($image_row['image_url'], 'placeholder.jpg') === false) {
+        $image_path = $image_row['image_url'];
+        
+        // Handle both relative and absolute paths
+        if (!file_exists($image_path)) {
+            // Try relative path from current directory
+            $image_path = "../" . $image_row['image_url'];
+        }
+        
+        if (file_exists($image_path)) {
+            unlink($image_path);
+        }
     }
     
     redirect_to("event_list.php");

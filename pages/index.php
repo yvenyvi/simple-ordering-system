@@ -6,6 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Delicious Eats - Online Food Ordering</title>
   <link rel="stylesheet" href="../assets/css/main.css" />
+  <link rel="stylesheet" href="../assets/css/cart.css" />
 
   <link
     rel="stylesheet"
@@ -86,6 +87,7 @@
   ?>
 
   <script src="../assets/js/sidebar.js"></script>
+  <script src="../assets/js/cart.js"></script>
 </body>
 
 </html>

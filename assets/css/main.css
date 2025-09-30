@@ -322,6 +322,10 @@ body {
     box-shadow: 2px 0 10px rgba(0,0,0,0.1);
 }
 
+.sidebar::-webkit-scrollbar {
+      display: none; /* Hides the scrollbar */
+    }
+
 .sidebar.active {
     transform: translateX(0);
 }

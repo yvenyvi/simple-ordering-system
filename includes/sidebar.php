@@ -3,7 +3,7 @@
     <div class="sidebar-header">
         <h3><i class="fas fa-bars"></i> Menu</h3>
     </div>
-    
+
     <div class="sidebar-content">
         <!-- Main Navigation -->
         <nav class="sidebar-nav">
@@ -22,10 +22,9 @@
                     </a>
                 </li>
                 <li>
-                    <a href="#" class="nav-link">
-                        <i class="fas fa-shopping-cart"></i>
-                        <span>My Cart</span>
-                        <span class="badge">0</span>
+                    <a href="events.php" class="nav-link">
+                        <i class="fas fa-calendar-alt"></i>
+                        <span>Events</span>
                     </a>
                 </li>
                 <li>

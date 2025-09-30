@@ -11,6 +11,7 @@ function display_product_cards($sql) {
     
     while ($row = mysqli_fetch_array($result)) {
         $image_src = get_image_path($row, 'menu');
+        $price = number_format($row['price'], 2);
         
         echo '<div class="product-card" data-category="' . htmlspecialchars($row['category'] ?? 'general') . '">';
         echo '<img src="' . htmlspecialchars($image_src) . '" alt="' . htmlspecialchars($row['name']) . '">';
@@ -21,8 +22,8 @@ function display_product_cards($sql) {
             echo '<p class="prep-time"><i class="fas fa-clock"></i> ' . $row['preparation_time'] . ' min</p>';
         }
         
-        echo '<p class="price">$' . number_format($row['price'], 2) . '</p>';
-        echo '<a href="#" class="btn" data-menu-id="' . $row['menu_id'] . '">Add to Cart</a>';
+        echo '<p class="price">$' . $price . '</p>';
+        echo '<a href="#" class="btn" data-menu-id="' . $row['menu_id'] . '" data-name="' . htmlspecialchars($row['name']) . '" data-price="' . $row['price'] . '" data-image="' . htmlspecialchars($image_src) . '">Add to Cart</a>';
         echo '</div>';
     }
 }

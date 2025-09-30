@@ -115,23 +115,33 @@ function renderTableCell($row, $column, $config) {
 }
 
 function renderImageCell($row, $config) {
-    $placeholder = '../assets/images/' . $config['image_directory'] . '/placeholder.jpg';
-    $image_path = $placeholder;
-    
-    if (isset($row['image_url']) && !empty($row['image_url'])) {
-        if (strpos($row['image_url'], 'assets/') === 0) {
-            $image_path = '../' . $row['image_url'];
-        } else {
-            $image_path = $row['image_url'];
-        }
+    // Use the db_Model helper function for consistent image handling
+    if (function_exists('get_image_path')) {
+        $table_name = str_replace('_list.php', '', $config['page']);
+        $image_path = get_image_path($row, $table_name);
+    } else {
+        // Fallback method
+        $placeholder = '../assets/images/' . $config['image_directory'] . '/placeholder.jpg';
+        $image_path = $placeholder;
         
-        if (!file_exists($image_path)) {
-            $image_path = $placeholder;
+        if (isset($row['image_url']) && !empty($row['image_url'])) {
+            if (strpos($row['image_url'], 'assets/') === 0) {
+                $image_path = '../' . $row['image_url'];
+            } else {
+                $image_path = $row['image_url'];
+            }
+            
+            if (!file_exists($image_path)) {
+                $image_path = $placeholder;
+            }
         }
     }
     
-    $name = $row[$config['name_field']];
-    return '<img src="' . $image_path . '" alt="' . htmlspecialchars($name) . '" class="table-image">';
+    $name = is_array($config['name_field']) 
+        ? $row[$config['name_field'][0]] . ' ' . $row[$config['name_field'][1]]
+        : $row[$config['name_field']];
+        
+    return '<img src="' . htmlspecialchars($image_path) . '" alt="' . htmlspecialchars($name) . '" class="table-image">';
 }
 
 function renderNameCell($row, $config) {
@@ -171,7 +181,11 @@ function renderActionsCell($row, $config) {
         : $row[$name_field];
     
     $html = '<div class="action-buttons">';
-    $html .= '<a href="edit.php?editid=' . $id . '" class="btn-action btn-edit"><i class="fas fa-edit"></i> Edit</a>';
+    
+    // Only show edit button if UPDATE functionality is enabled
+    // Currently disabled as per the save() function comments
+    // $html .= '<a href="edit.php?editid=' . $id . '" class="btn-action btn-edit"><i class="fas fa-edit"></i> Edit</a>';
+    
     $html .= '<a href="#" class="btn-action btn-delete" onclick="confirmDelete(' . $id . ', \'' . addslashes($name) . '\', \'' . $config['page'] . '\')"><i class="fas fa-trash"></i> Delete</a>';
     $html .= '</div>';
     

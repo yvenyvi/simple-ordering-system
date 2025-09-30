@@ -37,8 +37,9 @@
         <div class="product-grid">
           <?php
           require_once '../models/db_Model.php';
+          require_once '../models/user_display_model.php';
           
-          // Display featured products from database using the enhanced db_model
+          // Display featured products from database using the user display model
           display_featured_products(4);
           ?>
         </div>

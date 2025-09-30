@@ -1,91 +1,37 @@
 <?php
 /**
- * Admin Table Helper Functions
- * Replaces table_functions.php with clean, configurable functions
+ * Universal Automatic Table Helper
+ * Automatically generates table configurations for any database table
+ * Follows DRY principles - no more hardcoded configurations!
  */
 
+// Include the automatic table detection system
+require_once __DIR__ . '/auto_table_detector.php';
+
 /**
- * Display any admin table using the reusable view
+ * Display any admin table using automatic configuration generation
  */
-function display_admin_table_view($table_type, $sql) {
-    $table_config = getTableConfiguration($table_type);
+function display_admin_table_view($table_name, $sql) {
+    // Generate configuration automatically based on table structure
+    $table_config = getAutoTableConfig($table_name);
     $sql_query = $sql;
     
+    // Use the reusable admin table view
     include __DIR__ . '/../views/shared/admin_table.php';
 }
 
 /**
- * Get table configuration for different entity types
+ * Get table configuration - now fully automatic!
+ * No more hardcoded configurations needed
  */
-function getTableConfiguration($table_type) {
-    $configs = array(
-        'menu' => array(
-            'title' => 'Menu Items',
-            'icon' => 'fas fa-utensils',
-            'empty_message' => 'Start by adding your first menu item using the "Add New Item" button above.',
-            'image_directory' => 'products',
-            'id_field' => 'menu_id',
-            'name_field' => 'name',
-            'page' => 'menu_list.php',
-            'columns' => array(
-                'id' => 'ID',
-                'image' => 'Image', 
-                'name' => 'Name',
-                'category' => 'Category',
-                'price' => 'Price',
-                'prep_time' => 'Prep Time',
-                'status' => 'Status',
-                'date' => 'Created',
-                'actions' => 'Actions'
-            )
-        ),
-        'users' => array(
-            'title' => 'Registered Users',
-            'icon' => 'fas fa-users',
-            'empty_message' => 'No registered users found in the system.',
-            'image_directory' => 'users',
-            'id_field' => 'user_id',
-            'name_field' => array('first_name', 'last_name'),
-            'page' => 'user_list.php',
-            'columns' => array(
-                'id' => 'ID',
-                'name' => 'Name',
-                'email' => 'Email',
-                'phone' => 'Phone',
-                'location' => 'Location',
-                'status' => 'Status',
-                'date' => 'Joined',
-                'actions' => 'Actions'
-            )
-        ),
-        'events' => array(
-            'title' => 'Upcoming Events',
-            'icon' => 'fas fa-calendar-alt',
-            'empty_message' => 'Start by creating your first event using the "Add New Event" button above.',
-            'image_directory' => 'events',
-            'id_field' => 'event_id',
-            'name_field' => 'event_name',
-            'page' => 'event_list.php',
-            'columns' => array(
-                'id' => 'ID',
-                'image' => 'Image',
-                'name' => 'Event',
-                'type' => 'Type',
-                'event_date' => 'Date & Time',
-                'location' => 'Location',
-                'capacity' => 'Capacity',
-                'price' => 'Price',
-                'status' => 'Status',
-                'actions' => 'Actions'
-            )
-        )
-    );
-    
-    return $configs[$table_type] ?? $configs['menu']; // Default fallback
+function getTableConfiguration($table_name) {
+    // Simply delegate to the automatic system
+    return getAutoTableConfig($table_name);
 }
 
 /**
- * Backward compatibility functions - same names as table_functions.php
+ * Backward compatibility functions
+ * These maintain the same interface while using the new automatic system
  */
 
 ?>

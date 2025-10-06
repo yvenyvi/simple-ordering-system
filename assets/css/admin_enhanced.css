@@ -1,0 +1,426 @@
+/* Enhanced Admin Display Styles - High Priority Overrides */
+
+.admin-content-header {
+    margin-bottom: 30px !important;
+    padding: 20px 0 !important;
+    border-bottom: 2px solid #e9ecef !important;
+}
+
+.admin-content-header h2 {
+    color: #2c3e50 !important;
+    font-size: 28px !important;
+    font-weight: 700 !important;
+    margin: 0 !important;
+    text-transform: capitalize !important;
+}
+
+.admin-stats-cards {
+    display: flex !important;
+    gap: 20px !important;
+    margin-bottom: 30px !important;
+    flex-wrap: wrap !important;
+}
+
+.admin-stat-card {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+    color: white !important;
+    padding: 20px !important;
+    border-radius: 12px !important;
+    flex: 1 !important;
+    min-width: 200px !important;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1) !important;
+    transition: transform 0.3s ease !important;
+}
+
+.admin-stat-card:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.15) !important;
+}
+
+.admin-stat-card h3 {
+    margin: 0 0 10px 0 !important;
+    font-size: 14px !important;
+    font-weight: 600 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 1px !important;
+    opacity: 0.9 !important;
+}
+
+.admin-stat-card .stat-number {
+    font-size: 32px !important;
+    font-weight: 700 !important;
+    margin: 0 !important;
+    line-height: 1 !important;
+}
+
+/* Override existing table styles with enhanced design */
+.table-container .admin-enhanced-table,
+.table-container > .admin-enhanced-table,
+div.admin-enhanced-table {
+    background: white !important;
+    border-radius: 12px !important;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08) !important;
+    overflow: hidden !important;
+    margin-bottom: 30px !important;
+    border: none !important;
+    width: 100% !important;
+    max-width: 100% !important;
+}
+
+.admin-enhanced-table table,
+.admin-enhanced-table > table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    margin: 0 !important;
+    background: white !important;
+    table-layout: fixed !important;
+    max-width: 100% !important;
+}
+
+.admin-enhanced-table th,
+.admin-enhanced-table table th {
+    background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%) !important;
+    color: white !important;
+    padding: 18px 8px !important;
+    font-weight: 600 !important;
+    text-align: left !important;
+    font-size: 12px !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+    border: none !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+}
+
+.admin-enhanced-table td,
+.admin-enhanced-table table td {
+    padding: 12px 8px !important;
+    border-bottom: 1px solid #f8f9fa !important;
+    vertical-align: middle !important;
+    color: #555 !important;
+    line-height: 1.4 !important;
+    background: white !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+    max-width: 0 !important;
+}
+
+.admin-enhanced-table tr:hover,
+.admin-enhanced-table table tr:hover {
+    background-color: #f8f9fa !important;
+}
+
+.admin-enhanced-table tr:last-child td,
+.admin-enhanced-table table tr:last-child td {
+    border-bottom: none !important;
+}
+
+/* Cell type styling with higher specificity */
+.admin-enhanced-table .cell-image,
+.admin-enhanced-table table .cell-image {
+    display: block !important;
+    width: 50px !important;
+    height: 50px !important;
+    object-fit: cover !important;
+    border-radius: 8px !important;
+    border: 2px solid #e9ecef !important;
+    transition: transform 0.3s ease !important;
+    flex-shrink: 0 !important;
+}
+
+.admin-enhanced-table .cell-image:hover,
+.admin-enhanced-table table .cell-image:hover {
+    transform: scale(1.05) !important;
+    border-color: #007bff !important;
+}
+
+.admin-enhanced-table .cell-price,
+.admin-enhanced-table table .cell-price {
+    font-weight: 700 !important;
+    color: #28a745 !important;
+    font-size: 14px !important;
+    white-space: nowrap !important;
+}
+
+.admin-enhanced-table .cell-date,
+.admin-enhanced-table table .cell-date {
+    color: #6c757d !important;
+    font-family: 'Courier New', monospace !important;
+    font-size: 12px !important;
+    white-space: nowrap !important;
+}
+
+.admin-enhanced-table .cell-boolean,
+.admin-enhanced-table table .cell-boolean {
+    display: inline-block !important;
+    padding: 2px 8px !important;
+    border-radius: 20px !important;
+    font-size: 10px !important;
+    font-weight: 600 !important;
+    text-transform: uppercase !important;
+    white-space: nowrap !important;
+}
+
+.admin-enhanced-table .cell-boolean.true,
+.admin-enhanced-table table .cell-boolean.true {
+    background-color: #d4edda !important;
+    color: #155724 !important;
+    border: 1px solid #c3e6cb !important;
+}
+
+.admin-enhanced-table .cell-boolean.false,
+.admin-enhanced-table table .cell-boolean.false {
+    background-color: #f8d7da !important;
+    color: #721c24 !important;
+    border: 1px solid #f5c6cb !important;
+}
+
+.admin-enhanced-table .cell-email,
+.admin-enhanced-table table .cell-email {
+    color: #007bff !important;
+    text-decoration: none !important;
+    transition: color 0.3s ease !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+    max-width: 150px !important;
+    display: inline-block !important;
+}
+
+.admin-enhanced-table .cell-email:hover,
+.admin-enhanced-table table .cell-email:hover {
+    color: #0056b3 !important;
+    text-decoration: underline !important;
+}
+
+.admin-enhanced-table .cell-phone,
+.admin-enhanced-table table .cell-phone {
+    color: #28a745 !important;
+    font-family: 'Courier New', monospace !important;
+    font-weight: 600 !important;
+    font-size: 12px !important;
+    white-space: nowrap !important;
+}
+
+.admin-enhanced-table .cell-url,
+.admin-enhanced-table table .cell-url {
+    color: #6f42c1 !important;
+    text-decoration: none !important;
+    max-width: 120px !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+    display: inline-block !important;
+}
+
+.admin-enhanced-table .cell-url:hover,
+.admin-enhanced-table table .cell-url:hover {
+    color: #5a2d91 !important;
+    text-decoration: underline !important;
+}
+
+.admin-enhanced-table .cell-text,
+.admin-enhanced-table table .cell-text {
+    max-width: 200px !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+    line-height: 1.4 !important;
+}
+
+.admin-enhanced-table .cell-text:hover,
+.admin-enhanced-table table .cell-text:hover {
+    position: relative !important;
+    z-index: 10 !important;
+    background: white !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1) !important;
+    padding: 8px !important;
+    border-radius: 4px !important;
+    white-space: normal !important;
+    word-wrap: break-word !important;
+    max-width: 300px !important;
+}
+
+/* Action buttons styling */
+.admin-enhanced-table .action-buttons,
+.admin-enhanced-table table .action-buttons {
+    display: flex !important;
+    gap: 4px !important;
+    align-items: center !important;
+    justify-content: center !important;
+    white-space: nowrap !important;
+    min-width: 60px !important;
+}
+
+.admin-enhanced-table .btn-action,
+.admin-enhanced-table table .btn-action {
+    padding: 4px 8px !important;
+    border: none !important;
+    border-radius: 4px !important;
+    font-size: 12px !important;
+    font-weight: 500 !important;
+    text-decoration: none !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 2px !important;
+    transition: all 0.15s ease-in-out !important;
+    cursor: pointer !important;
+    white-space: nowrap !important;
+}
+
+.admin-enhanced-table .btn-delete,
+.admin-enhanced-table table .btn-delete {
+    background-color: #dc3545 !important;
+    color: white !important;
+}
+
+.admin-enhanced-table .btn-delete:hover,
+.admin-enhanced-table table .btn-delete:hover {
+    background-color: #c82333 !important;
+    color: white !important;
+    text-decoration: none !important;
+}
+
+/* Table container to prevent horizontal scrolling */
+.table-container {
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow-x: hidden !important;
+}
+
+.admin-enhanced-table {
+    overflow-x: hidden !important;
+}
+
+/* Ensure no element can cause horizontal scrolling */
+.admin-enhanced-table * {
+    max-width: 100% !important;
+}
+
+.admin-empty-state {
+    text-align: center !important;
+    padding: 60px 20px !important;
+    color: #6c757d !important;
+}
+
+.admin-empty-state i {
+    font-size: 64px !important;
+    margin-bottom: 20px !important;
+    opacity: 0.3 !important;
+}
+
+.admin-empty-state h3 {
+    margin: 0 0 10px 0 !important;
+    color: #495057 !important;
+    font-weight: 600 !important;
+}
+
+.admin-empty-state p {
+    margin: 0 !important;
+    font-size: 16px !important;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .admin-stats-cards {
+        flex-direction: column !important;
+    }
+    
+    .admin-stat-card {
+        min-width: auto !important;
+    }
+    
+    .admin-enhanced-table {
+        font-size: 12px !important;
+        overflow-x: hidden !important;
+    }
+    
+    .admin-enhanced-table th,
+    .admin-enhanced-table td {
+        padding: 8px 4px !important;
+        font-size: 11px !important;
+    }
+    
+    .admin-enhanced-table .cell-image {
+        width: 35px !important;
+        height: 35px !important;
+    }
+    
+    .admin-content-header h2 {
+        font-size: 20px !important;
+    }
+    
+    .admin-enhanced-table .cell-text {
+        max-width: 100px !important;
+    }
+    
+    .admin-enhanced-table .cell-email {
+        max-width: 80px !important;
+    }
+    
+    .admin-enhanced-table .cell-url {
+        max-width: 60px !important;
+    }
+    
+    .admin-enhanced-table .action-buttons {
+        flex-direction: column !important;
+        gap: 2px !important;
+    }
+    
+    .admin-enhanced-table .btn-action {
+        padding: 2px 4px !important;
+        font-size: 10px !important;
+    }
+}
+
+@media (max-width: 576px) {
+    .admin-enhanced-table {
+        font-size: 10px !important;
+    }
+    
+    .admin-enhanced-table th,
+    .admin-enhanced-table td {
+        padding: 6px 2px !important;
+        font-size: 10px !important;
+    }
+    
+    .admin-enhanced-table .cell-image {
+        width: 30px !important;
+        height: 30px !important;
+    }
+    
+    .admin-enhanced-table .cell-text {
+        max-width: 80px !important;
+    }
+    
+    .admin-enhanced-table .cell-email {
+        max-width: 60px !important;
+    }
+    
+    .admin-enhanced-table .cell-url {
+        max-width: 50px !important;
+    }
+    
+    .admin-content-header h2 {
+        font-size: 18px !important;
+    }
+}
+
+/* Print styles */
+@media print {
+    .admin-stats-cards {
+        display: none !important;
+    }
+    
+    .admin-enhanced-table {
+        box-shadow: none !important;
+        border: 1px solid #ddd !important;
+    }
+    
+    .admin-enhanced-table th {
+        background: #f8f9fa !important;
+        color: #333 !important;
+    }
+}

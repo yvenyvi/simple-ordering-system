@@ -50,7 +50,6 @@ function save($table, $data){
         if(isset($_FILES['fileField']) && $_FILES['fileField']['tmp_name']) {
             $newname = "$new_id.jpg";
             
-            // Use helper function for flexible directory handling
             $upload_dir = get_upload_directory($table);
             $upload_path = $upload_dir . $newname;
             
@@ -58,14 +57,7 @@ function save($table, $data){
                 mkdir($upload_dir, 0777, true);
             }
             
-            if(move_uploaded_file($_FILES['fileField']['tmp_name'], $upload_path)) {
-                // Use helper function for flexible ID field handling
-                $id_field_name = get_id_field_name($table);
-                
-                $image_url = str_replace("../", "", $upload_path);
-                $update_sql = "UPDATE $table SET image_url = '" . mysqli_real_escape_string($connection, $image_url) . "' WHERE $id_field_name = '$new_id'";
-                mysqli_query($connection, $update_sql);
-            }
+            move_uploaded_file($_FILES['fileField']['tmp_name'], $upload_path);
         }
         
         confirm_query($result);
@@ -113,23 +105,37 @@ function get_image_path($row, $table) {
     return $placeholder;
 }
 
+function display_table($table_name, $sql = null, $options = array()) {
+    // Load the admin display model (following same pattern as user_display_model)
+    require_once dirname(__FILE__) . '/admin_display_model.php';
+    
+    // Use the admin display model to handle the display
+    display_admin_table($table_name, $sql, $options);
+}
+
 /**
- * Universal admin table display function
- * Works with ANY database table using the table helper for rich UI
+ * Get table columns (helper function for auto-detection)
  */
-function display_table($table_name, $sql = null) {
-    // If no SQL provided, build a default one
-    if (!$sql) {
-        $sql = "SELECT * FROM `$table_name` ORDER BY created_at DESC";
+function getTableColumns($table_name) {
+    global $connection;
+    
+    $columns = array();
+    $query = "SHOW COLUMNS FROM `$table_name`";
+    $result = mysqli_query($connection, $query);
+    
+    if ($result) {
+        while ($row = mysqli_fetch_assoc($result)) {
+            $columns[$row['Field']] = array(
+                'type' => $row['Type'],
+                'null' => $row['Null'],
+                'key' => $row['Key'],
+                'default' => $row['Default'],
+                'extra' => $row['Extra']
+            );
+        }
     }
     
-    // Load the table helper functions if not already loaded
-    if (!function_exists('display_admin_table_view')) {
-        require_once dirname(__FILE__) . '/../admin/helpers/table_helper.php';
-    }
-    
-    // Use the table helper to display the rich UI
-    display_admin_table_view($table_name, $sql);
+    return $columns;
 }
 
 /**
@@ -158,7 +164,6 @@ function delete_record($table, $id_field, $id_value) {
     return $result;
 }
 
-// Flexible delete handler that works with any module
 if (isset($_GET['deleteid'])) {
     $delete_id = $_GET['deleteid'];
     $current_page = basename($_SERVER['PHP_SELF']);

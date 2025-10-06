@@ -149,3 +149,5 @@ function showMessage(message, type) {
     // Use Bootstrap alerts for simple notifications
     showBootstrapAlert(message, type);
 }
+
+

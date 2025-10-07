@@ -46,12 +46,19 @@ function display_admin_table($table_name, $sql = null, $options = array()) {
     
     $rowCount = mysqli_num_rows($result);
     
-    // Configuration
+    // Configuration with correct ID field mapping
+    $id_field_mapping = [
+        'users' => 'user_id',
+        'menu' => 'menu_id', 
+        'events' => 'event_id',
+        'orders' => 'order_id'
+    ];
+    
     $config = array_merge(array(
         'title' => ucfirst($table_name),
         'icon' => getTableIcon($table_name),
         'empty_message' => 'No ' . $table_name . ' found. Click the button above to add your first entry.',
-        'id_field' => $table_name . '_id',
+        'id_field' => isset($id_field_mapping[$table_name]) ? $id_field_mapping[$table_name] : $table_name . '_id',
         'image_directory' => getImageDirectory($table_name),
         'columns' => $options['columns'] ?? generateDisplayColumns($columns, $table_name),
         'actions' => $options['actions'] ?? array('delete')
@@ -284,10 +291,20 @@ function renderActionButtons($row, $table_name, $config) {
     // Properly escape name for JavaScript to prevent syntax errors
     $safe_name = addslashes(strip_tags($name));
     
+    // Map table names to correct admin page filenames
+    $page_mapping = [
+        'users' => 'user_list.php',
+        'menu' => 'menu_list.php', 
+        'events' => 'event_list.php',
+        'orders' => 'order_list.php'
+    ];
+    
+    $admin_page = isset($page_mapping[$table_name]) ? $page_mapping[$table_name] : $table_name . '_list.php';
+    
     $html = '<div class="action-buttons">';
     
     // Delete button with properly escaped parameters
-    $html .= '<a href="#" class="btn-action btn-delete" onclick="confirmDelete(' . intval($id) . ', \'' . $safe_name . '\', \'' . $table_name . '_list.php\');">';
+    $html .= '<a href="#" class="btn-action btn-delete" onclick="confirmDelete(' . intval($id) . ', \'' . $safe_name . '\', \'' . $admin_page . '\');">';
     $html .= '<i class="fas fa-trash"></i>';
     $html .= '</a>';
     

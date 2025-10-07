@@ -1,4 +1,7 @@
-<?php require_once("../models/db_Model.php"); ?>
+<?php 
+require_once("../models/db_Model.php"); 
+include 'controller/order_list.php';
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>

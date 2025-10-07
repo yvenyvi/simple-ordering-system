@@ -95,8 +95,15 @@ function get_upload_directory($table) {
 }
 
 function get_id_field_name($table) {
-    // Simple convention: table_name + '_id'
-    return $table . '_id';
+    // Map table names to correct ID field names
+    $id_field_mapping = [
+        'users' => 'user_id',
+        'menu' => 'menu_id',
+        'events' => 'event_id',
+        'orders' => 'order_id'
+    ];
+    
+    return isset($id_field_mapping[$table]) ? $id_field_mapping[$table] : $table . '_id';
 }
 
 function get_image_path($row, $table) {
@@ -166,23 +173,155 @@ function display_orders_table($sql = null) {
     display_table('orders', $sql);
 }
 
-function delete_record($table, $id_field, $id_value) {
+/**
+ * Centralized delete function for all controllers
+ * Handles table-specific logic, image cleanup, and cascade deletes
+ */
+function delete_record($table, $id_value) {
     global $connection;
-    $sql = "DELETE FROM $table WHERE $id_field = '$id_value'";
-    $result = mysqli_query($connection, $sql) or die(mysqli_error($connection));
-    confirm_query($result);
-    return $result;
-}
-
-if (isset($_GET['deleteid'])) {
-    $delete_id = $_GET['deleteid'];
-    $current_page = basename($_SERVER['PHP_SELF']);
     
-    $table = str_replace('_list.php', '', $current_page);
+    // Sanitize the ID
+    $id_value = intval($id_value);
+    if ($id_value <= 0) {
+        return ['success' => false, 'message' => 'Invalid ID provided'];
+    }
     
+    // Get the correct ID field name for the table
     $id_field = get_id_field_name($table);
     
-    delete_record($table, $id_field, $delete_id);
-    redirect_to($current_page);
+    try {
+        // Start transaction for data integrity
+        mysqli_autocommit($connection, false);
+        
+        // Handle table-specific cleanup before deletion
+        $cleanup_result = handle_pre_delete_cleanup($table, $id_field, $id_value);
+        if (!$cleanup_result['success']) {
+            mysqli_rollback($connection);
+            return $cleanup_result;
+        }
+        
+        // Perform the actual deletion with prepared statement
+        $sql = "DELETE FROM `$table` WHERE `$id_field` = ? LIMIT 1";
+        $stmt = mysqli_prepare($connection, $sql);
+        
+        if (!$stmt) {
+            mysqli_rollback($connection);
+            return ['success' => false, 'message' => 'Failed to prepare delete statement'];
+        }
+        
+        mysqli_stmt_bind_param($stmt, "i", $id_value);
+        $result = mysqli_stmt_execute($stmt);
+        
+        if (!$result) {
+            mysqli_rollback($connection);
+            mysqli_stmt_close($stmt);
+            return ['success' => false, 'message' => 'Failed to delete record: ' . mysqli_error($connection)];
+        }
+        
+        $affected_rows = mysqli_stmt_affected_rows($stmt);
+        mysqli_stmt_close($stmt);
+        
+        if ($affected_rows === 0) {
+            mysqli_rollback($connection);
+            return ['success' => false, 'message' => 'No record found with the specified ID'];
+        }
+        
+        // Commit the transaction
+        mysqli_commit($connection);
+        mysqli_autocommit($connection, true);
+        
+        return ['success' => true, 'message' => ucfirst($table) . ' record deleted successfully'];
+        
+    } catch (Exception $e) {
+        mysqli_rollback($connection);
+        mysqli_autocommit($connection, true);
+        return ['success' => false, 'message' => 'Error deleting record: ' . $e->getMessage()];
+    }
 }
+
+/**
+ * Handle table-specific cleanup before deletion (images, cascade deletes, etc.)
+ */
+function handle_pre_delete_cleanup($table, $id_field, $id_value) {
+    global $connection;
+    
+    switch ($table) {
+        case 'menu':
+        case 'events':
+            // Get and delete associated image file
+            $image_result = get_and_delete_image($table, $id_field, $id_value);
+            if (!$image_result['success']) {
+                return $image_result;
+            }
+            break;
+            
+        case 'orders':
+            // Delete associated order items first (cascade delete)
+            $items_sql = "DELETE FROM order_items WHERE order_id = ?";
+            $stmt = mysqli_prepare($connection, $items_sql);
+            mysqli_stmt_bind_param($stmt, "i", $id_value);
+            
+            if (!mysqli_stmt_execute($stmt)) {
+                mysqli_stmt_close($stmt);
+                return ['success' => false, 'message' => 'Failed to delete order items'];
+            }
+            mysqli_stmt_close($stmt);
+            break;
+            
+        case 'users':
+            // Check if user has any orders before deletion
+            $check_sql = "SELECT COUNT(*) as order_count FROM orders WHERE user_id = ?";
+            $stmt = mysqli_prepare($connection, $check_sql);
+            mysqli_stmt_bind_param($stmt, "i", $id_value);
+            mysqli_stmt_execute($stmt);
+            $result = mysqli_stmt_get_result($stmt);
+            $row = mysqli_fetch_assoc($result);
+            mysqli_stmt_close($stmt);
+            
+            if ($row['order_count'] > 0) {
+                return ['success' => false, 'message' => 'Cannot delete user with existing orders. Please handle orders first.'];
+            }
+            break;
+    }
+    
+    return ['success' => true, 'message' => 'Pre-delete cleanup completed'];
+}
+
+/**
+ * Get and delete image file associated with a record
+ */
+function get_and_delete_image($table, $id_field, $id_value) {
+    global $connection;
+    
+    // Get the image URL before deleting
+    $get_image_sql = "SELECT image_url FROM `$table` WHERE `$id_field` = ? LIMIT 1";
+    $stmt = mysqli_prepare($connection, $get_image_sql);
+    mysqli_stmt_bind_param($stmt, "i", $id_value);
+    mysqli_stmt_execute($stmt);
+    $image_result = mysqli_stmt_get_result($stmt);
+    $image_row = mysqli_fetch_array($image_result);
+    mysqli_stmt_close($stmt);
+    
+    // Remove the image file if it exists and is not a placeholder
+    if ($image_row && $image_row['image_url'] && strpos($image_row['image_url'], 'placeholder.jpg') === false) {
+        $image_path = $image_row['image_url'];
+        
+        // Handle both relative and absolute paths
+        if (!file_exists($image_path)) {
+            // Try relative path from current directory
+            $image_path = "../" . $image_row['image_url'];
+        }
+        
+        if (file_exists($image_path)) {
+            if (!unlink($image_path)) {
+                // Image deletion failed, but don't stop the record deletion
+                error_log("Warning: Failed to delete image file: $image_path");
+            }
+        }
+    }
+    
+    return ['success' => true, 'message' => 'Image cleanup completed'];
+}
+
+
 ?>

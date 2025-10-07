@@ -25,8 +25,13 @@ $current_page = basename($_SERVER['PHP_SELF']);
                 </a>
             </li>
             <li>
+                <a href="order_list.php" class="nav-item <?php echo ($current_page == 'order_list.php') ? 'active' : ''; ?>">
+                    <i class="fas fa-shopping-cart"></i> Order Management
+                </a>
+            </li>
+            <li>
                 <a href="event_list.php" class="nav-item <?php echo ($current_page == 'event_list.php') ? 'active' : ''; ?>">
-                    <i class="fas fa-users"></i> Event Management
+                    <i class="fas fa-calendar-alt"></i> Event Management
                 </a>
             </li>
             <li>

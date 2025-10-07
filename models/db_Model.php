@@ -39,13 +39,29 @@ function save($table, $data){
             $escaped_data[$field] = "'" . mysqli_real_escape_string($connection, $value) . "'";
         }
     }
-        // INSERT operation
-        $fields = implode(", ", array_keys($escaped_data));
-        $values = implode(", ", array_values($escaped_data));
-        
+    
+    // Check if table has timestamp columns
+    $table_columns = getTableColumns($table);
+    $has_created_at = isset($table_columns['created_at']);
+    $has_updated_at = isset($table_columns['updated_at']);
+    
+    // INSERT operation
+    $fields = implode(", ", array_keys($escaped_data));
+    $values = implode(", ", array_values($escaped_data));
+    
+    // Add timestamp fields only if they exist in the table
+    if ($has_created_at && $has_updated_at) {
         $sql_query = "INSERT INTO $table ($fields, created_at, updated_at) VALUES ($values, NOW(), NOW())";
-        $result = mysqli_query($connection, $sql_query) or die(mysqli_error($connection));
-        $new_id = mysqli_insert_id($connection);
+    } elseif ($has_created_at) {
+        $sql_query = "INSERT INTO $table ($fields, created_at) VALUES ($values, NOW())";
+    } elseif ($has_updated_at) {
+        $sql_query = "INSERT INTO $table ($fields, updated_at) VALUES ($values, NOW())";
+    } else {
+        $sql_query = "INSERT INTO $table ($fields) VALUES ($values)";
+    }
+    
+    $result = mysqli_query($connection, $sql_query) or die(mysqli_error($connection));
+    $new_id = mysqli_insert_id($connection);
         
         if(isset($_FILES['fileField']) && $_FILES['fileField']['tmp_name']) {
             $newname = "$new_id.jpg";
@@ -106,16 +122,11 @@ function get_image_path($row, $table) {
 }
 
 function display_table($table_name, $sql = null, $options = array()) {
-    // Load the admin display model (following same pattern as user_display_model)
     require_once dirname(__FILE__) . '/admin_display_model.php';
     
-    // Use the admin display model to handle the display
     display_admin_table($table_name, $sql, $options);
 }
 
-/**
- * Get table columns (helper function for auto-detection)
- */
 function getTableColumns($table_name) {
     global $connection;
     
@@ -138,22 +149,21 @@ function getTableColumns($table_name) {
     return $columns;
 }
 
-/**
- * Convenience functions for backward compatibility and common tables
- */
+
 function display_menu_table($sql = null) {
-    $sql = $sql ?: "SELECT * FROM menu ORDER BY created_at DESC";
     display_table('menu', $sql);
 }
 
 function display_users_table($sql = null) {
-    $sql = $sql ?: "SELECT * FROM users ORDER BY created_at DESC";
     display_table('users', $sql);
 }
 
 function display_events_table($sql = null) {
-    $sql = $sql ?: "SELECT * FROM events ORDER BY event_date ASC";
     display_table('events', $sql);
+}
+
+function display_orders_table($sql = null) {
+    display_table('orders', $sql);
 }
 
 function delete_record($table, $id_field, $id_value) {

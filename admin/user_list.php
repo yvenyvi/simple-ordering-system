@@ -99,34 +99,7 @@ include 'controller/user_list.php';
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <!-- Existing Admin JS -->
     <script src="../assets/js/admin.js"></script>
-
-    <!-- Enhanced Bootstrap functionality -->
-    <script>
-        function showAddUserForm() {
-            document.getElementById('add-user-form').style.display = 'block';
-            document.getElementById('user-firstname').focus();
-        }
-
-        function hideAddUserForm() {
-            document.getElementById('add-user-form').style.display = 'none';
-        }
-
-        // Auto-hide form after page load if there's no error
-        document.addEventListener('DOMContentLoaded', function() {
-            const urlParams = new URLSearchParams(window.location.search);
-            if (!urlParams.has('error')) {
-                hideAddUserForm();
-            }
-
-            // Show success/error messages using Bootstrap alerts
-            <?php if (isset($success_message)): ?>
-                showBootstrapAlert('<?php echo addslashes($success_message); ?>', 'success', 4000);
-            <?php endif; ?>
-
-            <?php if (isset($error_message)): ?>
-                showBootstrapAlert('<?php echo addslashes($error_message); ?>', 'error', 6000);
-            <?php endif; ?>
-        });
-    </script>
+    <!-- User Management JS -->
+    <script src="../assets/js/user_management.js"></script>
 
     <?php include 'includes/footer.php'; ?>

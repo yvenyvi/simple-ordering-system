@@ -125,53 +125,20 @@ include 'controller/event_list.php';
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <!-- Existing Admin JS -->
     <script src="../assets/js/admin.js"></script>
+    <!-- Event Management JS -->
+    <script src="../assets/js/event_management.js"></script>
 
-    <!-- Enhanced Bootstrap functionality -->
+    <!-- Handle PHP messages -->
     <script>
-        function showAddEventForm() {
-            document.getElementById('add-event-form').style.display = 'block';
-            document.getElementById('event-name').focus();
-        }
-
-        function hideAddEventForm() {
-            document.getElementById('add-event-form').style.display = 'none';
-            // Reset form when hiding
-            document.getElementById('eventForm').reset();
-        }
-
-        // Auto-hide form after page load if there's no error
         document.addEventListener('DOMContentLoaded', function() {
-            const urlParams = new URLSearchParams(window.location.search);
-            if (!urlParams.has('error')) {
-                hideAddEventForm();
-            }
-            
-            // Set minimum date to today
-            const eventDateInput = document.getElementById('event-date');
-            const today = new Date().toISOString().split('T')[0];
-            eventDateInput.min = today;
-
             // Show success/error messages using Bootstrap alerts
             <?php if (isset($success_message)): ?>
-                showBootstrapAlert('<?php echo addslashes($success_message); ?>', 'success', 4000);
+                showEventMessages('<?php echo addslashes($success_message); ?>', null);
             <?php endif; ?>
 
             <?php if (isset($error_message)): ?>
-                showBootstrapAlert('<?php echo addslashes($error_message); ?>', 'error', 6000);
+                showEventMessages(null, '<?php echo addslashes($error_message); ?>');
             <?php endif; ?>
-        });
-
-        // Form validation
-        document.getElementById('eventForm').addEventListener('submit', function(e) {
-            const eventDate = new Date(document.getElementById('event-date').value);
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
-            
-            if (eventDate < today) {
-                e.preventDefault();
-                showBootstrapAlert('Event date cannot be in the past. Please select a valid date.', 'error', 5000);
-                return false;
-            }
         });
     </script>
 

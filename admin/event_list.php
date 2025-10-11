@@ -1,9 +1,7 @@
 <?php
 $page_title = "Event Management";
 include 'includes/header.php';
-require_once "../models/db_Model.php"; // Now includes universal table display function
-
-include 'controller/event_list.php';
+require_once 'controller/event_list.php';
 ?>
 
 <body>

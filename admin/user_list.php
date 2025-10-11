@@ -1,8 +1,7 @@
 <?php
 $page_title = "User Management";
 include 'includes/header.php';
-require_once "../models/db_Model.php"; // Now includes universal table display function
-include 'controller/user_list.php';
+require_once 'controller/user_list.php';
 
 ?>
 

@@ -1,8 +1,7 @@
 <?php
 $page_title = "Menu Management";
 include 'includes/header.php';
-require_once "../models/db_Model.php"; // Now includes universal table display function
-include 'controller/menu_list.php';
+require_once 'controller/menu_list.php';
 ?>
 
 <body>

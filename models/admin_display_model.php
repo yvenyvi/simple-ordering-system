@@ -130,43 +130,76 @@ function renderStatsCards($table_name, $rowCount, $config) {
     echo '<div class="stat-number">' . $rowCount . '</div>';
     echo '</div>';
     
-    // Dynamic additional stats based on table structure
-    $columns = getTableColumns($table_name);
-    
-    // Look for common status/boolean fields
-    foreach ($columns as $column_name => $column_info) {
-        if (strpos($column_name, 'is_') === 0 || $column_name === 'active' || $column_name === 'available') {
-            $result = mysqli_query($connection, "SELECT COUNT(*) as count FROM $table_name WHERE $column_name = 1");
-            if ($result) {
-                $active_count = mysqli_fetch_array($result)['count'];
-                $label = ucwords(str_replace(['is_', '_'], ['', ' '], $column_name));
-                echo '<div class="admin-stat-card">';
-                echo '<h3>' . $label . '</h3>';
-                echo '<div class="stat-number">' . $active_count . '</div>';
-                echo '</div>';
-                break; // Only show one status card to avoid clutter
+    // Special handling for orders table - show order status breakdown
+    if ($table_name === 'orders') {
+        // Completed Orders (delivered)
+        $completed_result = mysqli_query($connection, "SELECT COUNT(*) as count FROM orders WHERE status = 'delivered'");
+        if ($completed_result) {
+            $completed_count = mysqli_fetch_array($completed_result)['count'];
+            echo '<div class="admin-stat-card stat-success">';
+            echo '<h3><i class="fas fa-check-circle"></i> Completed Orders</h3>';
+            echo '<div class="stat-number">' . $completed_count . '</div>';
+            echo '</div>';
+        }
+        
+        // Pending Orders (pending, confirmed, preparing, ready)
+        $pending_result = mysqli_query($connection, "SELECT COUNT(*) as count FROM orders WHERE status IN ('pending', 'confirmed', 'preparing', 'ready')");
+        if ($pending_result) {
+            $pending_count = mysqli_fetch_array($pending_result)['count'];
+            echo '<div class="admin-stat-card stat-warning">';
+            echo '<h3><i class="fas fa-clock"></i> Pending Orders</h3>';
+            echo '<div class="stat-number">' . $pending_count . '</div>';
+            echo '</div>';
+        }
+        
+        // Failed/Cancelled Orders
+        $cancelled_result = mysqli_query($connection, "SELECT COUNT(*) as count FROM orders WHERE status = 'cancelled'");
+        if ($cancelled_result) {
+            $cancelled_count = mysqli_fetch_array($cancelled_result)['count'];
+            echo '<div class="admin-stat-card stat-danger">';
+            echo '<h3><i class="fas fa-times-circle"></i> Cancelled Orders</h3>';
+            echo '<div class="stat-number">' . $cancelled_count . '</div>';
+            echo '</div>';
+        }
+    } else {
+        // Dynamic additional stats based on table structure for other tables
+        $columns = getTableColumns($table_name);
+        
+        // Look for common status/boolean fields
+        foreach ($columns as $column_name => $column_info) {
+            if (strpos($column_name, 'is_') === 0 || $column_name === 'active' || $column_name === 'available') {
+                $result = mysqli_query($connection, "SELECT COUNT(*) as count FROM $table_name WHERE $column_name = 1");
+                if ($result) {
+                    $active_count = mysqli_fetch_array($result)['count'];
+                    $label = ucwords(str_replace(['is_', '_'], ['', ' '], $column_name));
+                    echo '<div class="admin-stat-card">';
+                    echo '<h3>' . $label . '</h3>';
+                    echo '<div class="stat-number">' . $active_count . '</div>';
+                    echo '</div>';
+                    break; // Only show one status card to avoid clutter
+                }
             }
         }
-    }
-    
-    // Look for date-based stats (future events, recent items, etc.)
-    if (isset($columns['event_date'])) {
-        $result = mysqli_query($connection, "SELECT COUNT(*) as count FROM $table_name WHERE event_date >= CURDATE()");
-        if ($result) {
-            $upcoming_count = mysqli_fetch_array($result)['count'];
-            echo '<div class="admin-stat-card">';
-            echo '<h3>Upcoming Events</h3>';
-            echo '<div class="stat-number">' . $upcoming_count . '</div>';
-            echo '</div>';
-        }
-    } elseif (isset($columns['created_at'])) {
-        $result = mysqli_query($connection, "SELECT COUNT(*) as count FROM $table_name WHERE created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)");
-        if ($result) {
-            $recent_count = mysqli_fetch_array($result)['count'];
-            echo '<div class="admin-stat-card">';
-            echo '<h3>Recent (30 days)</h3>';
-            echo '<div class="stat-number">' . $recent_count . '</div>';
-            echo '</div>';
+        
+        // Look for date-based stats (future events, recent items, etc.)
+        if (isset($columns['event_date'])) {
+            $result = mysqli_query($connection, "SELECT COUNT(*) as count FROM $table_name WHERE event_date >= CURDATE()");
+            if ($result) {
+                $upcoming_count = mysqli_fetch_array($result)['count'];
+                echo '<div class="admin-stat-card">';
+                echo '<h3>Upcoming Events</h3>';
+                echo '<div class="stat-number">' . $upcoming_count . '</div>';
+                echo '</div>';
+            }
+        } elseif (isset($columns['created_at'])) {
+            $result = mysqli_query($connection, "SELECT COUNT(*) as count FROM $table_name WHERE created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)");
+            if ($result) {
+                $recent_count = mysqli_fetch_array($result)['count'];
+                echo '<div class="admin-stat-card">';
+                echo '<h3>Recent (30 days)</h3>';
+                echo '<div class="stat-number">' . $recent_count . '</div>';
+                echo '</div>';
+            }
         }
     }
     
@@ -209,6 +242,44 @@ function formatColumnValue($row, $column_key, $column_config, $table_name) {
             return '<span class="cell-boolean ' . $class . '">' . $text . '</span>';
             
         case 'status':
+            // For orders table, show dropdown for status updates
+            if ($table_name === 'orders' && $column_key === 'status') {
+                $order_id = $row['order_id'] ?? '';
+                $status_options = [
+                    'pending' => 'Pending',
+                    'confirmed' => 'Confirmed',
+                    'preparing' => 'Preparing',
+                    'ready' => 'Ready',
+                    'delivered' => 'Delivered',
+                    'cancelled' => 'Cancelled'
+                ];
+                
+                $status_classes = [
+                    'pending' => 'warning',
+                    'confirmed' => 'info', 
+                    'preparing' => 'primary',
+                    'ready' => 'success',
+                    'delivered' => 'success',
+                    'cancelled' => 'danger'
+                ];
+                
+                $class = $status_classes[$value] ?? 'secondary';
+                
+                $dropdown = '<select class="form-select form-select-sm order-status-dropdown bg-' . $class . ' text-white border-0" 
+                                     data-order-id="' . $order_id . '" 
+                                     data-current-status="' . htmlspecialchars($value) . '"
+                                     style="max-width: 180px; font-weight: 500;">';
+                
+                foreach ($status_options as $status_value => $status_label) {
+                    $selected = ($value === $status_value) ? 'selected' : '';
+                    $dropdown .= '<option value="' . $status_value . '" ' . $selected . '>' . $status_label . '</option>';
+                }
+                
+                $dropdown .= '</select>';
+                return $dropdown;
+            }
+            
+            // For other tables or payment_status, show badge
             $status_classes = [
                 'pending' => 'warning',
                 'confirmed' => 'info', 
@@ -303,10 +374,22 @@ function renderActionButtons($row, $table_name, $config) {
     
     $html = '<div class="action-buttons">';
     
-    // Delete button with properly escaped parameters
-    $html .= '<a href="#" class="btn-action btn-delete" onclick="confirmDelete(' . intval($id) . ', \'' . $safe_name . '\', \'' . $admin_page . '\');">';
-    $html .= '<i class="fas fa-trash"></i>';
-    $html .= '</a>';
+    // Get the actions from config (default to just delete)
+    $actions = $config['actions'] ?? ['delete'];
+    
+    // View button (for orders)
+    if (in_array('view', $actions)) {
+        $html .= '<a href="#" class="btn-action btn-view" onclick="viewOrderDetails(' . intval($id) . '); return false;" title="View Details">';
+        $html .= '<i class="fas fa-eye"></i>';
+        $html .= '</a>';
+    }
+    
+    // Delete button
+    if (in_array('delete', $actions)) {
+        $html .= '<a href="#" class="btn-action btn-delete" onclick="confirmDelete(' . intval($id) . ', \'' . $safe_name . '\', \'' . $admin_page . '\'); return false;" title="Delete">';
+        $html .= '<i class="fas fa-trash"></i>';
+        $html .= '</a>';
+    }
     
     $html .= '</div>';
     

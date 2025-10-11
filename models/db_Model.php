@@ -170,13 +170,52 @@ function display_events_table($sql = null) {
 }
 
 function display_orders_table($sql = null) {
-    display_table('orders', $sql);
+    // Custom column configuration for orders display
+    $options = [
+        'columns' => [
+            'order_id' => [
+                'label' => 'Order #',
+                'type' => 'string'
+            ],
+            'customer_name' => [
+                'label' => 'Customer',
+                'type' => 'string'
+            ],
+            'customer_email' => [
+                'label' => 'Email',
+                'type' => 'email'
+            ],
+            'phone' => [
+                'label' => 'Phone',
+                'type' => 'phone'
+            ],
+            'item_count' => [
+                'label' => 'Items',
+                'type' => 'string'
+            ],
+            'total_amount' => [
+                'label' => 'Total',
+                'type' => 'price'
+            ],
+            'status' => [
+                'label' => 'Status',
+                'type' => 'status'
+            ],
+            'payment_status' => [
+                'label' => 'Payment',
+                'type' => 'status'
+            ],
+            'order_date' => [
+                'label' => 'Order Date',
+                'type' => 'datetime'
+            ]
+        ],
+        'actions' => ['view', 'delete']
+    ];
+    
+    display_table('orders', $sql, $options);
 }
 
-/**
- * Centralized delete function for all controllers
- * Handles table-specific logic, image cleanup, and cascade deletes
- */
 function delete_record($table, $id_value) {
     global $connection;
     
@@ -239,9 +278,7 @@ function delete_record($table, $id_value) {
     }
 }
 
-/**
- * Handle table-specific cleanup before deletion (images, cascade deletes, etc.)
- */
+
 function handle_pre_delete_cleanup($table, $id_field, $id_value) {
     global $connection;
     
@@ -287,9 +324,6 @@ function handle_pre_delete_cleanup($table, $id_field, $id_value) {
     return ['success' => true, 'message' => 'Pre-delete cleanup completed'];
 }
 
-/**
- * Get and delete image file associated with a record
- */
 function get_and_delete_image($table, $id_field, $id_value) {
     global $connection;
     

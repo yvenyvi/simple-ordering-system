@@ -28,9 +28,57 @@ if (!in_array($status, $valid_statuses)) {
 }
 
 try {
-    // Update order status
+    // Get current order details including payment method
+    $order_query = "SELECT payment_method, payment_status FROM orders WHERE order_id = $order_id";
+    $order_result = mysqli_query($connection, $order_query);
+    
+    if (!$order_result || mysqli_num_rows($order_result) === 0) {
+        echo json_encode(['success' => false, 'message' => 'Order not found']);
+        exit;
+    }
+    
+    $order_data = mysqli_fetch_assoc($order_result);
+    $payment_method = $order_data['payment_method'];
+    $current_payment_status = $order_data['payment_status'];
+    
+    // Determine payment status based on payment method and order status
+    $new_payment_status = $current_payment_status; // Default: keep current status
+    $payment_status_updated = false;
+    
+    if ($payment_method === 'cash') {
+        // Cash payment: payment status follows order status (original behavior)
+        $payment_status_map = [
+            'pending' => 'pending',
+            'confirmed' => 'pending',
+            'preparing' => 'pending',
+            'ready' => 'pending',
+            'delivered' => 'paid',
+            'cancelled' => ($current_payment_status === 'paid') ? 'refunded' : 'failed'
+        ];
+        
+        if (isset($payment_status_map[$status])) {
+            $new_payment_status = $payment_status_map[$status];
+            $payment_status_updated = ($new_payment_status !== $current_payment_status);
+        }
+    } else {
+        // Online/Card payment: payment is successful immediately unless cancelled
+        if ($status === 'cancelled') {
+            // If order is cancelled, refund the payment
+            $new_payment_status = 'refunded';
+            $payment_status_updated = ($new_payment_status !== $current_payment_status);
+        } elseif ($current_payment_status === 'pending') {
+            // For non-cash payments, mark as paid immediately when order is confirmed
+            if (in_array($status, ['confirmed', 'preparing', 'ready', 'delivered'])) {
+                $new_payment_status = 'paid';
+                $payment_status_updated = true;
+            }
+        }
+    }
+    
+    // Update order status and payment status
     $update_query = "UPDATE orders SET 
                         status = '$status',
+                        payment_status = '$new_payment_status',
                         updated_at = NOW()
                      WHERE order_id = $order_id";
     
@@ -54,7 +102,10 @@ try {
     echo json_encode([
         'success' => true,
         'message' => 'Order status updated successfully',
-        'new_status' => $status
+        'new_status' => $status,
+        'new_payment_status' => $new_payment_status,
+        'payment_status_updated' => $payment_status_updated,
+        'payment_method' => $payment_method
     ]);
     
 } catch (Exception $e) {

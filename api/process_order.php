@@ -60,6 +60,15 @@ try {
     }
     
     // Create order record
+    $payment_method = $customer_info['payment_method'] ?? 'cash';
+    
+    // Set initial payment status based on payment method
+    $initial_payment_status = 'pending';
+    if (in_array($payment_method, ['credit_card', 'debit_card', 'online'])) {
+        // For non-cash payments, assume payment is processed immediately
+        $initial_payment_status = 'paid';
+    }
+    
     $order_data = [
         'user_id' => $user_id,
         'total_amount' => $total_amount,
@@ -67,8 +76,8 @@ try {
         'delivery_address' => $customer_info['address'] . ', ' . ($customer_info['city'] ?? '') . ', ' . ($customer_info['state'] ?? '') . ' ' . ($customer_info['zip_code'] ?? ''),
         'phone' => $customer_info['phone'],
         'special_instructions' => $customer_info['special_instructions'] ?? null,
-        'payment_method' => $customer_info['payment_method'] ?? 'cash',
-        'payment_status' => 'pending'
+        'payment_method' => $payment_method,
+        'payment_status' => $initial_payment_status
     ];
     
     $order_id = save('orders', $order_data);

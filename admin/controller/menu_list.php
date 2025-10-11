@@ -1,4 +1,5 @@
 <?php
+require_once "../models/db_Model.php"; // Now includes universal table display function
 
 // Handle delete request
 if (isset($_GET['deleteid'])) {

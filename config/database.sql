@@ -1,11 +1,9 @@
--- Create Database for Delicious Eats Ordering System
--- Database: delicious_eats
+DROP database delicious_eats;
 
--- Create the database
 CREATE DATABASE IF NOT EXISTS delicious_eats;
 USE delicious_eats;
 
--- Create Users table
+-- Create Users table (unchanged from original)
 CREATE TABLE IF NOT EXISTS users (
     user_id INT AUTO_INCREMENT PRIMARY KEY,
     first_name VARCHAR(50) NOT NULL,
@@ -22,7 +20,7 @@ CREATE TABLE IF NOT EXISTS users (
     is_active BOOLEAN DEFAULT TRUE
 );
 
--- Create Menu table
+-- Create Menu table (unchanged from original)
 CREATE TABLE IF NOT EXISTS menu (
     menu_id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
@@ -38,23 +36,53 @@ CREATE TABLE IF NOT EXISTS menu (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
--- Create Orders table (additional table for complete ordering system)
+-- Enhanced Orders table with additional columns
 CREATE TABLE IF NOT EXISTS orders (
     order_id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
+    
+    -- Tracking and financial columns
+    tracking_number VARCHAR(50) UNIQUE NULL,
+    total_amount DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
+    
+    -- Original columns
     order_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    total_amount DECIMAL(10, 2) NOT NULL,
-    status ENUM('pending', 'confirmed', 'preparing', 'ready', 'delivered', 'cancelled') DEFAULT 'pending',
+    status ENUM('pending', 'confirmed', 'preparing', 'ready', 'out_for_delivery', 'delivered', 'cancelled') DEFAULT 'pending',
     delivery_address TEXT,
     phone VARCHAR(15),
     special_instructions TEXT,
-    payment_method ENUM('cash', 'credit_card', 'debit_card', 'paypal', 'online') DEFAULT 'cash',
+    payment_method ENUM('cash', 'credit_card', 'debit_card', 'online') DEFAULT 'cash',
     payment_status ENUM('pending', 'paid', 'failed', 'refunded') DEFAULT 'pending',
-    estimated_delivery TIMESTAMP NULL,
-    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
+    
+    -- Audit and lifecycle columns
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    confirmed_at TIMESTAMP NULL,
+    cancelled_at TIMESTAMP NULL,
+    
+    -- Customer service and operations columns
+    internal_notes TEXT NULL,
+    priority_level ENUM('low', 'normal', 'high', 'urgent') DEFAULT 'normal',
+    order_source ENUM('website', 'phone', 'mobile_app', 'walk_in', 'third_party') DEFAULT 'website',
+    estimated_prep_time INT DEFAULT 30, -- in minutes
+    customer_rating TINYINT NULL, -- 1-5 rating
+    customer_feedback TEXT NULL,
+    
+    -- Customer communication
+    sms_notifications BOOLEAN DEFAULT FALSE,
+    email_notifications BOOLEAN DEFAULT TRUE,
+    
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
+    
+    -- Indexes for better performance
+    INDEX idx_status (status),
+    INDEX idx_order_date (order_date),
+    INDEX idx_tracking_number (tracking_number),
+    INDEX idx_priority_level (priority_level),
+    INDEX idx_order_source (order_source),
+    INDEX idx_payment_status (payment_status)
 );
 
--- Create Events table
+-- Create Events table (unchanged from original)
 CREATE TABLE IF NOT EXISTS events (
     event_id INT AUTO_INCREMENT PRIMARY KEY,
     event_name VARCHAR(100) NOT NULL,
@@ -74,7 +102,7 @@ CREATE TABLE IF NOT EXISTS events (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
--- Create Order Items table (junction table for orders and menu items)
+-- Enhanced Order Items table with additional columns
 CREATE TABLE IF NOT EXISTS order_items (
     order_item_id INT AUTO_INCREMENT PRIMARY KEY,
     order_id INT NOT NULL,
@@ -83,13 +111,35 @@ CREATE TABLE IF NOT EXISTS order_items (
     unit_price DECIMAL(10, 2) NOT NULL,
     total_price DECIMAL(10, 2) NOT NULL,
     special_requests TEXT,
+    
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    
     FOREIGN KEY (order_id) REFERENCES orders(order_id) ON DELETE CASCADE,
-    FOREIGN KEY (menu_id) REFERENCES menu(menu_id) ON DELETE CASCADE
+    FOREIGN KEY (menu_id) REFERENCES menu(menu_id) ON DELETE CASCADE,
+    
+    -- Indexes
+    INDEX idx_order_id (order_id),
+    INDEX idx_menu_id (menu_id)
 );
 
--- Insert sample menu data based on your products.php
+-- New table for order status history (audit trail)
+CREATE TABLE IF NOT EXISTS order_status_history (
+    history_id INT AUTO_INCREMENT PRIMARY KEY,
+    order_id INT NOT NULL,
+    old_status VARCHAR(50),
+    new_status VARCHAR(50) NOT NULL,
+    changed_by VARCHAR(100), -- Admin user or system
+    change_reason TEXT,
+    changed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    
+    FOREIGN KEY (order_id) REFERENCES orders(order_id) ON DELETE CASCADE,
+    INDEX idx_order_id (order_id),
+    INDEX idx_changed_at (changed_at)
+);
+
+
+-- Insert sample menu data (unchanged from original)
 INSERT INTO menu (name, description, category, price, image_url, ingredients, preparation_time) VALUES
 ('Margherita Pizza', 'Classic pizza with tomato sauce, fresh mozzarella, basil leaves, and olive oil.', 'pizza', 14.99, '../assets/images/products/placeholder.jpg', 'Pizza dough, Tomato sauce, Fresh mozzarella, Basil leaves, Olive oil', 20),
 ('Grilled Salmon', 'Perfectly grilled salmon fillet with lemon herb butter and seasonal vegetables.', 'salads', 22.99, '../assets/images/products/placeholder.jpg', 'Fresh salmon fillet, Lemon, Herbs, Butter, Seasonal vegetables', 25),
@@ -110,7 +160,7 @@ INSERT INTO users (first_name, last_name, email, password, phone, address, city,
 ('Jane', 'Smith', 'jane.smith@email.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '555-987-6543', '456 Oak Ave', 'Somewhere', 'NY', '67890'),
 ('Mike', 'Johnson', 'mike.johnson@email.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '555-456-7890', '789 Pine Rd', 'Elsewhere', 'TX', '54321');
 
--- Insert sample events
+-- Insert sample events (unchanged from original)
 INSERT INTO events (event_name, description, event_date, event_time, location, capacity, price, event_type, contact_email, contact_phone, requirements, image_url) VALUES
 ('Italian Cooking Workshop', 'Learn to make authentic Italian pasta and sauces from our head chef. Includes hands-on cooking, wine tasting, and a 3-course meal.', '2025-09-15', '18:00:00', 'Main Kitchen & Private Dining Room', 20, 75.00, 'cooking_class', 'events@deliciouseats.com', '555-EVENTS', 'Aprons provided. Comfortable shoes recommended.', '../assets/images/events/placeholder.jpg'),
 ('Wine & Cheese Tasting', 'An evening of fine wines paired with artisanal cheeses. Guided by our sommelier with detailed tasting notes.', '2025-09-22', '19:30:00', 'Wine Cellar', 15, 45.00, 'tasting', 'events@deliciouseats.com', '555-EVENTS', 'Must be 21+. Valid ID required.', '../assets/images/events/placeholder.jpg'),
@@ -119,23 +169,48 @@ INSERT INTO events (event_name, description, event_date, event_time, location, c
 ('Kids Cooking Class', 'Fun cooking class for children ages 8-14. Learn to make pizzas, cookies, and healthy snacks in a safe, supervised environment.', '2025-10-28', '14:00:00', 'Kids Activity Room', 12, 35.00, 'workshop', 'kids@deliciouseats.com', '555-KIDS', 'Ages 8-14. Parent/guardian must sign waiver.', '../assets/images/events/placeholder.jpg'),
 ('Holiday Catering Showcase', 'Sample our holiday catering menu and place advance orders for your holiday parties and corporate events.', '2025-11-20', '16:00:00', 'Main Dining Room', 50, 0.00, 'other', 'catering@deliciouseats.com', '555-CATER', 'Free event. RSVP required for accurate headcount.', '../assets/images/events/placeholder.jpg');
 
--- Create indexes for better performance
+-- Create indexes for better performance (additional to table-specific indexes)
 CREATE INDEX idx_users_email ON users(email);
 CREATE INDEX idx_menu_category ON menu(category);
 CREATE INDEX idx_menu_available ON menu(is_available);
 CREATE INDEX idx_orders_user ON orders(user_id);
-CREATE INDEX idx_orders_status ON orders(status);
-CREATE INDEX idx_order_items_order ON order_items(order_id);
-CREATE INDEX idx_order_items_menu ON order_items(menu_id);
 CREATE INDEX idx_events_date ON events(event_date);
 CREATE INDEX idx_events_type ON events(event_type);
 CREATE INDEX idx_events_active ON events(is_active);
 
+-- Create triggers for order status history
+DELIMITER //
+
+CREATE TRIGGER order_status_change_trigger
+    AFTER UPDATE ON orders
+    FOR EACH ROW
+BEGIN
+    IF OLD.status != NEW.status THEN
+        INSERT INTO order_status_history (order_id, old_status, new_status, changed_by, change_reason)
+        VALUES (NEW.order_id, OLD.status, NEW.status, 'SYSTEM', 'Status updated');
+    END IF;
+END//
+
+CREATE TRIGGER order_tracking_number_trigger
+    BEFORE INSERT ON orders
+    FOR EACH ROW
+BEGIN
+    IF NEW.tracking_number IS NULL OR NEW.tracking_number = '' THEN
+        -- Generate a unique tracking number using timestamp and random component
+        SET NEW.tracking_number = CONCAT(
+            'DE',
+            YEAR(NOW()),
+            LPAD(FLOOR(RAND() * 1000000), 6, '0')
+        );
+    END IF;
+END//
+
+DELIMITER ;
+
 -- Display created tables
 SHOW TABLES;
 
--- Display table structures
-DESCRIBE users;
-DESCRIBE menu;
+-- Display enhanced table structure
 DESCRIBE orders;
 DESCRIBE order_items;
+DESCRIBE order_status_history;

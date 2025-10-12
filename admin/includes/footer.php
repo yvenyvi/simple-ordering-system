@@ -49,6 +49,38 @@
             var tooltipList = tooltipTriggerList.map(function(tooltipTriggerEl) {
                 return new bootstrap.Tooltip(tooltipTriggerEl);
             });
+
+            // Mobile sidebar toggle functionality
+            const sidebarToggle = document.getElementById('mobileSidebarToggle');
+            const sidebar = document.getElementById('adminSidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+
+            if (sidebarToggle && sidebar) {
+                sidebarToggle.addEventListener('click', function() {
+                    sidebar.classList.toggle('mobile-open');
+                    if (overlay) {
+                        overlay.classList.toggle('active');
+                    }
+                });
+            }
+
+            // Close sidebar when clicking overlay
+            if (overlay) {
+                overlay.addEventListener('click', function() {
+                    sidebar.classList.remove('mobile-open');
+                    overlay.classList.remove('active');
+                });
+            }
+
+            // Close sidebar on window resize if larger than mobile
+            window.addEventListener('resize', function() {
+                if (window.innerWidth >= 992) { // lg breakpoint
+                    sidebar.classList.remove('mobile-open');
+                    if (overlay) {
+                        overlay.classList.remove('active');
+                    }
+                }
+            });
         });
     </script>
 </body>

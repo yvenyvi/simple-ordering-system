@@ -58,6 +58,60 @@ include 'controller/index.php';
                     </div>
                 </div>
 
+                <!-- Recent Activity -->
+                <div class="dashboard-row">
+                    <!-- Recent Orders -->
+                    <div class="dashboard-widget">
+                        <h3 class="widget-title"><i class="fas fa-clock"></i> Recent Orders</h3>
+                        <div class="recent-orders">
+                            <?php if (mysqli_num_rows($recentOrdersResult) > 0): ?>
+                                <?php while ($order = mysqli_fetch_array($recentOrdersResult)): ?>
+                                    <div class="recent-order-item">
+                                        <div class="order-info">
+                                            <strong>Order #<?php echo $order['order_id']; ?></strong>
+                                            <span class="customer-name"><?php echo $order['customer_name']; ?></span>
+                                        </div>
+                                        <div class="order-details">
+                                            <span class="order-amount">$<?php echo number_format($order['total_amount'], 2); ?></span>
+                                            <span class="order-status status-<?php echo $order['status']; ?>"><?php echo ucfirst($order['status']); ?></span>
+                                        </div>
+                                        <div class="order-time"><?php echo date('M d, g:i A', strtotime($order['order_date'])); ?></div>
+                                    </div>
+                                <?php endwhile; ?>
+                            <?php else: ?>
+                                <p class="no-data">No recent orders</p>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+
+                    <!-- Upcoming Events -->
+                    <div class="dashboard-widget">
+                        <h3 class="widget-title"><i class="fas fa-calendar-alt"></i> Upcoming Events</h3>
+                        <div class="upcoming-events">
+                            <?php if (mysqli_num_rows($upcomingEventsResult) > 0): ?>
+                                <?php while ($event = mysqli_fetch_array($upcomingEventsResult)): ?>
+                                    <div class="upcoming-event-item">
+                                        <div class="event-date">
+                                            <span class="month"><?php echo date('M', strtotime($event['event_date'])); ?></span>
+                                            <span class="day"><?php echo date('d', strtotime($event['event_date'])); ?></span>
+                                        </div>
+                                        <div class="event-info">
+                                            <strong><?php echo $event['event_name']; ?></strong>
+                                            <div class="event-details">
+                                                <span class="event-time"><?php echo date('g:i A', strtotime($event['event_time'])); ?></span>
+                                                <span class="event-price">$<?php echo number_format($event['price'], 2); ?></span>
+                                            </div>
+                                            <small class="event-capacity"><?php echo $event['capacity']; ?> spots</small>
+                                        </div>
+                                    </div>
+                                <?php endwhile; ?>
+                            <?php else: ?>
+                                <p class="no-data">No upcoming events</p>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Business Overview -->
                 <div class="stats-section">
                     <h3 class="section-title"><i class="fas fa-chart-bar"></i> Business Overview</h3>
@@ -192,60 +246,6 @@ include 'controller/index.php';
                                 <p>Refunded</p>
                                 <small>$<?php echo number_format($paymentStatus['refunded']['amount'] ?? 0, 2); ?></small>
                             </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Recent Activity -->
-                <div class="dashboard-row">
-                    <!-- Recent Orders -->
-                    <div class="dashboard-widget">
-                        <h3 class="widget-title"><i class="fas fa-clock"></i> Recent Orders</h3>
-                        <div class="recent-orders">
-                            <?php if (mysqli_num_rows($recentOrdersResult) > 0): ?>
-                                <?php while ($order = mysqli_fetch_array($recentOrdersResult)): ?>
-                                    <div class="recent-order-item">
-                                        <div class="order-info">
-                                            <strong>Order #<?php echo $order['order_id']; ?></strong>
-                                            <span class="customer-name"><?php echo $order['customer_name']; ?></span>
-                                        </div>
-                                        <div class="order-details">
-                                            <span class="order-amount">$<?php echo number_format($order['total_amount'], 2); ?></span>
-                                            <span class="order-status status-<?php echo $order['status']; ?>"><?php echo ucfirst($order['status']); ?></span>
-                                        </div>
-                                        <div class="order-time"><?php echo date('M d, g:i A', strtotime($order['order_date'])); ?></div>
-                                    </div>
-                                <?php endwhile; ?>
-                            <?php else: ?>
-                                <p class="no-data">No recent orders</p>
-                            <?php endif; ?>
-                        </div>
-                    </div>
-
-                    <!-- Upcoming Events -->
-                    <div class="dashboard-widget">
-                        <h3 class="widget-title"><i class="fas fa-calendar-alt"></i> Upcoming Events</h3>
-                        <div class="upcoming-events">
-                            <?php if (mysqli_num_rows($upcomingEventsResult) > 0): ?>
-                                <?php while ($event = mysqli_fetch_array($upcomingEventsResult)): ?>
-                                    <div class="upcoming-event-item">
-                                        <div class="event-date">
-                                            <span class="month"><?php echo date('M', strtotime($event['event_date'])); ?></span>
-                                            <span class="day"><?php echo date('d', strtotime($event['event_date'])); ?></span>
-                                        </div>
-                                        <div class="event-info">
-                                            <strong><?php echo $event['event_name']; ?></strong>
-                                            <div class="event-details">
-                                                <span class="event-time"><?php echo date('g:i A', strtotime($event['event_time'])); ?></span>
-                                                <span class="event-price">$<?php echo number_format($event['price'], 2); ?></span>
-                                            </div>
-                                            <small class="event-capacity"><?php echo $event['capacity']; ?> spots</small>
-                                        </div>
-                                    </div>
-                                <?php endwhile; ?>
-                            <?php else: ?>
-                                <p class="no-data">No upcoming events</p>
-                            <?php endif; ?>
                         </div>
                     </div>
                 </div>

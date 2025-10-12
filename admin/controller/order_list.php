@@ -4,31 +4,7 @@ ob_start();
 error_reporting(E_ALL);
 ini_set('display_errors', 0); // Don't display errors in output
 
-// Include database model - fix path for AJAX requests
-if (file_exists("../models/db_Model.php")) {
-    require_once "../models/db_Model.php";
-} elseif (file_exists("../../models/db_Model.php")) {
-    require_once "../../models/db_Model.php";
-} else {
-    error_log("Cannot find db_Model.php file");
-    if (isset($_GET['action'])) {
-        ob_clean();
-        header('Content-Type: application/json');
-        echo json_encode(['success' => false, 'message' => 'Database model file not found']);
-        exit;
-    }
-}
-
-// Test database connection
-if (!isset($connection) || !$connection) {
-    if (isset($_GET['action'])) {
-        ob_clean();
-        header('Content-Type: application/json');
-        echo json_encode(['success' => false, 'message' => 'Database connection error']);
-        exit;
-    }
-}
-
+require_once __DIR__ . "/../../models/db_Model.php";
 // Handle AJAX requests
 if (isset($_GET['action'])) {
     ob_clean(); // Clear any output buffer before sending JSON

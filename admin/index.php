@@ -1,9 +1,7 @@
 <?php
 $page_title = "Admin Dashboard";
 include 'includes/header.php';
-require_once "../models/db_Model.php";
 
-// Get comprehensive dashboard stats
 global $connection;
 
 include 'controller/index.php';

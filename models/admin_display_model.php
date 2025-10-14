@@ -122,48 +122,145 @@ function renderAdminTable($table_name, $result, $rowCount, $config, $options) {
 function renderStatsCards($table_name, $rowCount, $config) {
     global $connection;
     
-    echo '<div class="admin-stats-cards">';
+    echo '<div class="admin-stats-grid">';
     
-    // Total count card
-    echo '<div class="admin-stat-card">';
-    echo '<h3>Total ' . $config['title'] . '</h3>';
-    echo '<div class="stat-number">' . $rowCount . '</div>';
-    echo '</div>';
+    // Enhanced stats based on table type
+    $columns = getTableColumns($table_name);
     
-    // Special handling for orders table - show order status breakdown
-    if ($table_name === 'orders') {
-        // Completed Orders (delivered)
-        $completed_result = mysqli_query($connection, "SELECT COUNT(*) as count FROM orders WHERE status = 'delivered'");
-        if ($completed_result) {
-            $completed_count = mysqli_fetch_array($completed_result)['count'];
-            echo '<div class="admin-stat-card stat-success">';
-            echo '<h3><i class="fas fa-check-circle"></i> Completed Orders</h3>';
-            echo '<div class="stat-number">' . $completed_count . '</div>';
-            echo '</div>';
-        }
+    if ($table_name === 'menu') {
+        // Menu-specific enhanced stats
+        $total_result = mysqli_query($connection, "SELECT COUNT(*) as count FROM $table_name");
+        $total_count = mysqli_fetch_array($total_result)['count'];
         
-        // Pending Orders (pending, confirmed, preparing, ready)
-        $pending_result = mysqli_query($connection, "SELECT COUNT(*) as count FROM orders WHERE status IN ('pending', 'confirmed', 'preparing', 'ready')");
-        if ($pending_result) {
-            $pending_count = mysqli_fetch_array($pending_result)['count'];
-            echo '<div class="admin-stat-card stat-warning">';
-            echo '<h3><i class="fas fa-clock"></i> Pending Orders</h3>';
-            echo '<div class="stat-number">' . $pending_count . '</div>';
-            echo '</div>';
-        }
+        $available_result = mysqli_query($connection, "SELECT COUNT(*) as count FROM $table_name WHERE is_available = 1");
+        $available_count = mysqli_fetch_array($available_result)['count'];
+        $unavailable_count = $total_count - $available_count;
         
-        // Failed/Cancelled Orders
-        $cancelled_result = mysqli_query($connection, "SELECT COUNT(*) as count FROM orders WHERE status = 'cancelled'");
-        if ($cancelled_result) {
-            $cancelled_count = mysqli_fetch_array($cancelled_result)['count'];
-            echo '<div class="admin-stat-card stat-danger">';
-            echo '<h3><i class="fas fa-times-circle"></i> Cancelled Orders</h3>';
-            echo '<div class="stat-number">' . $cancelled_count . '</div>';
-            echo '</div>';
-        }
+        $categories_result = mysqli_query($connection, "SELECT COUNT(DISTINCT category) as count FROM $table_name");
+        $categories_count = mysqli_fetch_array($categories_result)['count'];
+        
+        $avg_price_result = mysqli_query($connection, "SELECT AVG(price) as avg_price FROM $table_name WHERE is_available = 1");
+        $avg_price = mysqli_fetch_array($avg_price_result)['avg_price'];
+        
+        echo '<div class="admin-stat-card total-items">';
+        echo '<div class="stat-icon"><i class="fas fa-utensils"></i></div>';
+        echo '<div class="stat-content">';
+        echo '<h3>Total Menu Items</h3>';
+        echo '<div class="stat-number">' . $total_count . '</div>';
+        echo '<small>' . $categories_count . ' categories</small>';
+        echo '</div>';
+        echo '</div>';
+        
+        echo '<div class="admin-stat-card available-items">';
+        echo '<div class="stat-icon"><i class="fas fa-check-circle"></i></div>';
+        echo '<div class="stat-content">';
+        echo '<h3>Available Items</h3>';
+        echo '<div class="stat-number">' . $available_count . '</div>';
+        echo '<small>' . $unavailable_count . ' unavailable</small>';
+        echo '</div>';
+        echo '</div>';
+        
+        echo '<div class="admin-stat-card price-info">';
+        echo '<div class="stat-icon"><i class="fas fa-dollar-sign"></i></div>';
+        echo '<div class="stat-content">';
+        echo '<h3>Average Price</h3>';
+        echo '<div class="stat-number">$' . number_format($avg_price, 2) . '</div>';
+        echo '<small>for available items</small>';
+        echo '</div>';
+        echo '</div>';
+        
+    } elseif ($table_name === 'users') {
+        // User-specific enhanced stats
+        $total_result = mysqli_query($connection, "SELECT COUNT(*) as count FROM $table_name");
+        $total_count = mysqli_fetch_array($total_result)['count'];
+        
+        $recent_result = mysqli_query($connection, "SELECT COUNT(*) as count FROM $table_name WHERE created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)");
+        $recent_count = mysqli_fetch_array($recent_result)['count'];
+        
+        $active_result = mysqli_query($connection, "SELECT COUNT(*) as count FROM $table_name WHERE status = 'active'");
+        $active_count = mysqli_fetch_array($active_result)['count'];
+        
+        echo '<div class="admin-stat-card total-users">';
+        echo '<div class="stat-icon"><i class="fas fa-users"></i></div>';
+        echo '<div class="stat-content">';
+        echo '<h3>Total Users</h3>';
+        echo '<div class="stat-number">' . $total_count . '</div>';
+        echo '<small>' . $active_count . ' active users</small>';
+        echo '</div>';
+        echo '</div>';
+        
+        echo '<div class="admin-stat-card new-users">';
+        echo '<div class="stat-icon"><i class="fas fa-user-plus"></i></div>';
+        echo '<div class="stat-content">';
+        echo '<h3>New This Month</h3>';
+        echo '<div class="stat-number">' . $recent_count . '</div>';
+        echo '<small>last 30 days</small>';
+        echo '</div>';
+        echo '</div>';
+        
+    } elseif ($table_name === 'orders') {
+        // Order-specific enhanced stats
+        $total_result = mysqli_query($connection, "SELECT COUNT(*) as count, SUM(total_amount) as revenue FROM $table_name WHERE status != 'cancelled'");
+        $total_data = mysqli_fetch_array($total_result);
+        
+        $today_result = mysqli_query($connection, "SELECT COUNT(*) as count, SUM(total_amount) as revenue FROM $table_name WHERE DATE(order_date) = CURDATE() AND status != 'cancelled'");
+        $today_data = mysqli_fetch_array($today_result);
+        
+        $pending_result = mysqli_query($connection, "SELECT COUNT(*) as count FROM $table_name WHERE status IN ('pending', 'confirmed', 'preparing', 'ready')");
+        $pending_count = mysqli_fetch_array($pending_result)['count'];
+        
+        $completed_result = mysqli_query($connection, "SELECT COUNT(*) as count FROM $table_name WHERE status = 'delivered'");
+        $completed_count = mysqli_fetch_array($completed_result)['count'];
+        
+        echo '<div class="admin-stat-card total-orders">';
+        echo '<div class="stat-icon"><i class="fas fa-shopping-cart"></i></div>';
+        echo '<div class="stat-content">';
+        echo '<h3>Total Orders</h3>';
+        echo '<div class="stat-number">' . $total_data['count'] . '</div>';
+        echo '<small>$' . number_format($total_data['revenue'], 2) . ' revenue</small>';
+        echo '</div>';
+        echo '</div>';
+        
+        echo '<div class="admin-stat-card today-orders">';
+        echo '<div class="stat-icon"><i class="fas fa-calendar-day"></i></div>';
+        echo '<div class="stat-content">';
+        echo '<h3>Today\'s Orders</h3>';
+        echo '<div class="stat-number">' . $today_data['count'] . '</div>';
+        echo '<small>$' . number_format($today_data['revenue'], 2) . ' today</small>';
+        echo '</div>';
+        echo '</div>';
+        
+        echo '<div class="admin-stat-card pending-orders">';
+        echo '<div class="stat-icon"><i class="fas fa-clock"></i></div>';
+        echo '<div class="stat-content">';
+        echo '<h3>Pending Orders</h3>';
+        echo '<div class="stat-number">' . $pending_count . '</div>';
+        echo '<small>need attention</small>';
+        echo '</div>';
+        echo '</div>';
+        
+        echo '<div class="admin-stat-card completed-orders">';
+        echo '<div class="stat-icon"><i class="fas fa-check-circle"></i></div>';
+        echo '<div class="stat-content">';
+        echo '<h3>Completed Orders</h3>';
+        echo '<div class="stat-number">' . $completed_count . '</div>';
+        echo '<small>delivered</small>';
+        echo '</div>';
+        echo '</div>';
+        
     } else {
-        // Dynamic additional stats based on table structure for other tables
-        $columns = getTableColumns($table_name);
+        // Generic enhanced stats for other tables
+        $total_result = mysqli_query($connection, "SELECT COUNT(*) as count FROM $table_name");
+        if ($total_result) {
+            $total_count = mysqli_fetch_array($total_result)['count'];
+            echo '<div class="admin-stat-card">';
+            echo '<div class="stat-icon"><i class="fas fa-list"></i></div>';
+            echo '<div class="stat-content">';
+            echo '<h3>Total ' . $config['title'] . '</h3>';
+            echo '<div class="stat-number">' . $total_count . '</div>';
+            echo '</div>';
+            echo '</div>';
+        }
         
         // Look for common status/boolean fields
         foreach ($columns as $column_name => $column_info) {
@@ -173,8 +270,11 @@ function renderStatsCards($table_name, $rowCount, $config) {
                     $active_count = mysqli_fetch_array($result)['count'];
                     $label = ucwords(str_replace(['is_', '_'], ['', ' '], $column_name));
                     echo '<div class="admin-stat-card">';
+                    echo '<div class="stat-icon"><i class="fas fa-check-circle"></i></div>';
+                    echo '<div class="stat-content">';
                     echo '<h3>' . $label . '</h3>';
                     echo '<div class="stat-number">' . $active_count . '</div>';
+                    echo '</div>';
                     echo '</div>';
                     break; // Only show one status card to avoid clutter
                 }
@@ -186,18 +286,26 @@ function renderStatsCards($table_name, $rowCount, $config) {
             $result = mysqli_query($connection, "SELECT COUNT(*) as count FROM $table_name WHERE event_date >= CURDATE()");
             if ($result) {
                 $upcoming_count = mysqli_fetch_array($result)['count'];
-                echo '<div class="admin-stat-card">';
+                echo '<div class="admin-stat-card upcoming-events">';
+                echo '<div class="stat-icon"><i class="fas fa-calendar-plus"></i></div>';
+                echo '<div class="stat-content">';
                 echo '<h3>Upcoming Events</h3>';
                 echo '<div class="stat-number">' . $upcoming_count . '</div>';
+                echo '<small>scheduled</small>';
+                echo '</div>';
                 echo '</div>';
             }
-        } elseif (isset($columns['created_at'])) {
+        } elseif (isset($columns['created_at']) && $table_name !== 'menu' && $table_name !== 'users') {
             $result = mysqli_query($connection, "SELECT COUNT(*) as count FROM $table_name WHERE created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)");
             if ($result) {
                 $recent_count = mysqli_fetch_array($result)['count'];
-                echo '<div class="admin-stat-card">';
+                echo '<div class="admin-stat-card recent-items">';
+                echo '<div class="stat-icon"><i class="fas fa-clock"></i></div>';
+                echo '<div class="stat-content">';
                 echo '<h3>Recent (30 days)</h3>';
                 echo '<div class="stat-number">' . $recent_count . '</div>';
+                echo '<small>new additions</small>';
+                echo '</div>';
                 echo '</div>';
             }
         }
@@ -391,6 +499,29 @@ function renderActionButtons($row, $table_name, $config) {
             $html .= '<a href="#" class="btn-action btn-view" onclick="viewDetails(' . intval($id) . '); return false;" title="View Details">';
         }
         $html .= '<i class="fas fa-eye"></i>';
+        $html .= '</a>';
+    }
+    
+    // Edit button
+    if (in_array('edit', $actions)) {
+        if ($table_name === 'menu') {
+            $html .= '<a href="#" class="btn-action btn-edit" onclick="editMenuItem(' . intval($id) . '); return false;" title="Edit Item">';
+        } else {
+            $html .= '<a href="#" class="btn-action btn-edit" onclick="editItem(' . intval($id) . '); return false;" title="Edit">';
+        }
+        $html .= '<i class="fas fa-edit"></i>';
+        $html .= '</a>';
+    }
+    
+    // Toggle availability button (for menu items)
+    if (in_array('toggle', $actions) && $table_name === 'menu') {
+        $is_available = $row['is_available'] ?? 0;
+        $toggle_class = $is_available ? 'btn-toggle-on' : 'btn-toggle-off';
+        $toggle_title = $is_available ? 'Make Unavailable' : 'Make Available';
+        $toggle_icon = $is_available ? 'fas fa-toggle-on' : 'fas fa-toggle-off';
+        
+        $html .= '<a href="#" class="btn-action ' . $toggle_class . '" onclick="toggleAvailability(' . intval($id) . ', ' . intval($is_available) . '); return false;" title="' . $toggle_title . '">';
+        $html .= '<i class="' . $toggle_icon . '"></i>';
         $html .= '</a>';
     }
     

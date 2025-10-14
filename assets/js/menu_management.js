@@ -13,6 +13,9 @@ function initializeMenuManagement() {
     if (!urlParams.has('error')) {
         hideAddMenuForm();
     }
+    
+    // Initialize filters
+    applyFilters();
 }
 
 function showAddMenuForm() {
@@ -21,18 +24,109 @@ function showAddMenuForm() {
 }
 
 function hideAddMenuForm() {
-    document.getElementById('add-menu-form').style.display = 'none';
-    // Reset form when hiding
-    document.getElementById('menuForm').reset();
+    modalElement.style.display = 'none';
 }
 
-// Filter Functions
+// Edit menu item function
+function editMenuItem(id) {
+    fetch('controller/menu_list.php?action=get_menu_for_edit&menu_id=' + id, {
+        method: 'GET'
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success && data.menu) {
+            const menu = data.menu;
+            
+            // Populate form fields
+            document.getElementById('edit-menu-id').value = menu.menu_id;
+            document.getElementById('edit-menu-name').value = menu.name;
+            document.getElementById('edit-menu-category').value = menu.category;
+            document.getElementById('edit-menu-price').value = menu.price;
+            document.getElementById('edit-menu-prep-time').value = menu.preparation_time || '15';
+            document.getElementById('edit-menu-description').value = menu.description || '';
+            document.getElementById('edit-menu-ingredients').value = menu.ingredients || '';
+            document.getElementById('edit-menu-nutritional-info').value = menu.nutritional_info || '';
+            document.getElementById('edit-menu-available').checked = menu.is_available == 1;
+            
+            // Show modal
+            const modal = new bootstrap.Modal(document.getElementById('editMenuModal'));
+            modal.show();
+        } else {
+            alert('Error loading menu item for editing');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error loading menu item');
+    });
+}
+
+// Toggle availability function
+function toggleAvailability(id) {
+    fetch('controller/menu_list.php', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: 'action=toggle_availability&menu_id=' + id
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Reload the table to reflect changes
+            location.reload();
+        } else {
+            alert(data.message || 'Error toggling availability');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error toggling availability');
+    });
+}
+
+// Save menu changes
+document.addEventListener('DOMContentLoaded', function() {
+    const saveButton = document.getElementById('saveMenuChanges');
+    if (saveButton) {
+        saveButton.addEventListener('click', function() {
+            const form = document.getElementById('editMenuForm');
+            const formData = new FormData(form);
+            formData.append('action', 'update_menu');
+            
+            // Convert checkbox to proper value
+            formData.set('is_available', document.getElementById('edit-menu-available').checked ? '1' : '0');
+            
+            fetch('controller/menu_list.php', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('editMenuModal'));
+                    modal.hide();
+                    location.reload(); // Reload to show updated data
+                } else {
+                    alert(data.message || 'Error updating menu item');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error updating menu item');
+            });
+        });
+    }
+});
+
+// Enhanced Filter Functions
 function applyFilters() {
     const categoryFilter = document.getElementById('category-filter').value.toLowerCase();
     const statusFilter = document.getElementById('status-filter').value;
     const searchFilter = document.getElementById('search-filter').value.toLowerCase();
+    const priceFilter = document.getElementById('price-filter').value;
     
-    const tableRows = document.querySelectorAll('.table tbody tr');
+    const tableRows = document.querySelectorAll('.admin-enhanced-table tbody tr');
     let visibleCount = 0;
     
     tableRows.forEach(row => {
@@ -40,31 +134,58 @@ function applyFilters() {
         
         // Category filter
         if (categoryFilter && shouldShow) {
-            const categoryCell = row.cells[2]; // Category column
+            const categoryCell = row.querySelector('td:nth-child(3)'); // Category column (adjusted for image column)
             if (categoryCell && !categoryCell.textContent.toLowerCase().includes(categoryFilter)) {
                 shouldShow = false;
             }
         }
         
-        // Status filter
+        // Status filter (availability)
         if (statusFilter !== '' && shouldShow) {
-            const statusCell = row.cells[6]; // Availability column
-            const isAvailable = statusCell && statusCell.textContent.includes('Available');
-            if (statusFilter === '1' && !isAvailable) {
-                shouldShow = false;
-            } else if (statusFilter === '0' && isAvailable) {
-                shouldShow = false;
+            const statusCell = row.querySelector('td:nth-child(6)'); // Availability column
+            if (statusCell) {
+                const isAvailable = statusCell.textContent.includes('Yes') || statusCell.querySelector('.badge.bg-success');
+                if (statusFilter === '1' && !isAvailable) {
+                    shouldShow = false;
+                } else if (statusFilter === '0' && isAvailable) {
+                    shouldShow = false;
+                }
             }
         }
         
-        // Search filter
+        // Price filter
+        if (priceFilter && shouldShow) {
+            const priceCell = row.querySelector('td:nth-child(4) .cell-price'); // Price column
+            if (priceCell) {
+                const priceText = priceCell.textContent.replace('$', '').replace(',', '');
+                const price = parseFloat(priceText);
+                
+                if (!isNaN(price)) {
+                    switch (priceFilter) {
+                        case '0-10':
+                            if (price > 10) shouldShow = false;
+                            break;
+                        case '10-20':
+                            if (price < 10 || price > 20) shouldShow = false;
+                            break;
+                        case '20-30':
+                            if (price < 20 || price > 30) shouldShow = false;
+                            break;
+                        case '30+':
+                            if (price < 30) shouldShow = false;
+                            break;
+                    }
+                }
+            }
+        }
+        
+        // Search filter (name and potentially ingredients/description if available)
         if (searchFilter && shouldShow) {
-            const nameCell = row.cells[1]; // Name column
-            const descCell = row.cells[3]; // Description column
+            const nameCell = row.querySelector('td:nth-child(2)'); // Name column
             const nameText = nameCell ? nameCell.textContent.toLowerCase() : '';
-            const descText = descCell ? descCell.textContent.toLowerCase() : '';
             
-            if (!nameText.includes(searchFilter) && !descText.includes(searchFilter)) {
+            // Check if the search term matches the name
+            if (!nameText.includes(searchFilter)) {
                 shouldShow = false;
             }
         }
@@ -85,6 +206,7 @@ function clearFilters() {
     document.getElementById('category-filter').value = '';
     document.getElementById('status-filter').value = '';
     document.getElementById('search-filter').value = '';
+    document.getElementById('price-filter').value = '';
     applyFilters();
 }
 
@@ -94,13 +216,20 @@ function updateResultsCount(visible, total) {
         countDisplay = document.createElement('div');
         countDisplay.id = 'results-count';
         countDisplay.className = 'results-count';
-        document.querySelector('.table-container').insertBefore(countDisplay, document.querySelector('.table'));
+        const filterActions = document.querySelector('.filter-actions');
+        if (filterActions) {
+            filterActions.appendChild(countDisplay);
+        } else {
+            document.querySelector('.table-container').insertBefore(countDisplay, document.querySelector('.admin-enhanced-table'));
+        }
     }
     
     if (visible === total) {
         countDisplay.innerHTML = `<i class="fas fa-list"></i> Showing all ${total} menu items`;
+        countDisplay.className = 'results-count text-muted';
     } else {
         countDisplay.innerHTML = `<i class="fas fa-filter"></i> Showing ${visible} of ${total} menu items`;
+        countDisplay.className = 'results-count text-primary fw-bold';
     }
 }
 
@@ -224,6 +353,15 @@ function displayMenuDetails(menu) {
                     ${menu.ingredients.split(',').map(ingredient => 
                         `<span class="badge bg-light text-dark me-1 mb-1">${ingredient.trim()}</span>`
                     ).join('')}
+                </div>
+            </div>
+            ` : ''}
+            
+            ${menu.nutritional_info ? `
+            <div class="mb-3">
+                <h6 class="section-title"><i class="fas fa-chart-pie"></i> Nutritional Information</h6>
+                <div class="nutritional-info">
+                    ${menu.nutritional_info}
                 </div>
             </div>
             ` : ''}

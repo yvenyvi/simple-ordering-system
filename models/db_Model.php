@@ -190,7 +190,7 @@ function display_menu_table($sql = null) {
                 'type' => 'datetime'
             ]
         ],
-        'actions' => ['view', 'delete']
+        'actions' => ['view', 'edit', 'toggle', 'delete']
     ];
     display_table('menu', $sql, $options);
 }

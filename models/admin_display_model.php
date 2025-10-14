@@ -227,6 +227,10 @@ function formatColumnValue($row, $column_key, $column_config, $table_name) {
         case 'price':
             return '<span class="cell-price">$' . number_format((float)$value, 2) . '</span>';
             
+        case 'prep_time':
+            if (empty($value)) return '<span class="text-muted">-</span>';
+            return '<span class="cell-prep-time">' . intval($value) . ' min</span>';
+            
         case 'date':
             if (empty($value)) return '<span class="cell-date">-</span>';
             return '<span class="cell-date">' . date('M d, Y', strtotime($value)) . '</span>';
@@ -377,9 +381,15 @@ function renderActionButtons($row, $table_name, $config) {
     // Get the actions from config (default to just delete)
     $actions = $config['actions'] ?? ['delete'];
     
-    // View button (for orders)
+    // View button
     if (in_array('view', $actions)) {
-        $html .= '<a href="#" class="btn-action btn-view" onclick="viewOrderDetails(' . intval($id) . '); return false;" title="View Details">';
+        if ($table_name === 'orders') {
+            $html .= '<a href="#" class="btn-action btn-view" onclick="viewOrderDetails(' . intval($id) . '); return false;" title="View Details">';
+        } elseif ($table_name === 'menu') {
+            $html .= '<a href="#" class="btn-action btn-view" onclick="viewMenuDetails(' . intval($id) . '); return false;" title="View Details">';
+        } else {
+            $html .= '<a href="#" class="btn-action btn-view" onclick="viewDetails(' . intval($id) . '); return false;" title="View Details">';
+        }
         $html .= '<i class="fas fa-eye"></i>';
         $html .= '</a>';
     }

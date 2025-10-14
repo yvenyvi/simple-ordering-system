@@ -1,5 +1,75 @@
 <?php
-require_once "../models/db_Model.php"; // Now includes universal table display function
+require_once __DIR__ . "/../../models/db_Model.php";
+
+// Handle AJAX requests for menu details
+if (isset($_GET['action'])) {
+    header('Content-Type: application/json');
+    
+    try {
+        switch ($_GET['action']) {
+            case 'get_menu_details':
+                handleGetMenuDetails();
+                break;
+            default:
+                http_response_code(400);
+                echo json_encode(['success' => false, 'message' => 'Invalid action']);
+        }
+    } catch (Exception $e) {
+        error_log("Menu controller exception: " . $e->getMessage());
+        http_response_code(500);
+        echo json_encode(['success' => false, 'message' => 'Server error occurred']);
+    }
+    exit;
+}
+
+// Handle get menu details AJAX request
+function handleGetMenuDetails() {
+    global $connection;
+    
+    try {
+        if (!isset($_GET['menu_id'])) {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'message' => 'Menu ID required']);
+            return;
+        }
+        
+        $menu_id = intval($_GET['menu_id']);
+        
+        // Get menu details
+        $menu_query = "SELECT * FROM menu WHERE menu_id = ?";
+        
+        $stmt = mysqli_prepare($connection, $menu_query);
+        if (!$stmt) {
+            throw new Exception("Failed to prepare menu query: " . mysqli_error($connection));
+        }
+        
+        mysqli_stmt_bind_param($stmt, "i", $menu_id);
+        mysqli_stmt_execute($stmt);
+        $menu_result = mysqli_stmt_get_result($stmt);
+        
+        if (!$menu_result || mysqli_num_rows($menu_result) === 0) {
+            echo json_encode(['success' => false, 'message' => 'Menu item not found']);
+            mysqli_stmt_close($stmt);
+            return;
+        }
+        
+        $menu = mysqli_fetch_assoc($menu_result);
+        mysqli_stmt_close($stmt);
+        
+        echo json_encode([
+            'success' => true,
+            'menu' => $menu
+        ]);
+        
+    } catch (Exception $e) {
+        error_log("Error in handleGetMenuDetails: " . $e->getMessage());
+        http_response_code(500);
+        echo json_encode([
+            'success' => false,
+            'message' => 'Failed to get menu details'
+        ]);
+    }
+}
 
 // Handle delete request
 if (isset($_GET['deleteid'])) {

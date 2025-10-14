@@ -158,7 +158,41 @@ function getTableColumns($table_name) {
 
 
 function display_menu_table($sql = null) {
-    display_table('menu', $sql);
+    // Custom configuration for menu table with view action and limited columns
+    $options = [
+        'columns' => [
+            'image_url' => [
+                'label' => 'Image',
+                'type' => 'image'
+            ],
+            'name' => [
+                'label' => 'Name',
+                'type' => 'string'
+            ],
+            'category' => [
+                'label' => 'Category',
+                'type' => 'string'
+            ],
+            'price' => [
+                'label' => 'Price',
+                'type' => 'price'
+            ],
+            'preparation_time' => [
+                'label' => 'Prep Time',
+                'type' => 'prep_time'
+            ],
+            'is_available' => [
+                'label' => 'Available',
+                'type' => 'boolean'
+            ],
+            'created_at' => [
+                'label' => 'Created',
+                'type' => 'datetime'
+            ]
+        ],
+        'actions' => ['view', 'delete']
+    ];
+    display_table('menu', $sql, $options);
 }
 
 function display_users_table($sql = null) {

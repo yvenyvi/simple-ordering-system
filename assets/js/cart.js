@@ -681,7 +681,7 @@ class ShoppingCart {
                 customer_info: customerInfo
             };
 
-            const response = await fetch('../api/process_order.php', {
+            const response = await fetch('../admin/controller/process_order.php', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

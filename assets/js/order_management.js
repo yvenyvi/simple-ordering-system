@@ -204,7 +204,10 @@ function displayOrderDetails(order) {
                             <strong>Status:</strong> <span class="ms-2"><span class="badge bg-${getStatusColor(order.status)}">${order.status}</span></span>
                         </div>
                         <div class="info-item">
-                            <strong>Payment:</strong> <span class="ms-2"><span class="badge bg-${getPaymentColor(order.payment_status)}">${order.payment_status}</span></span>
+                            <strong>Payment Method:</strong> <span class="ms-2">${formatPaymentMethod(order.payment_method)}</span>
+                        </div>
+                        <div class="info-item">
+                            <strong>Payment Status:</strong> <span class="ms-2"><span class="badge bg-${getPaymentColor(order.payment_status)}">${order.payment_status}</span></span>
                         </div>
                         <div class="info-item">
                             <strong>Total:</strong> <span class="ms-2 text-success fw-bold">$${parseFloat(order.total_amount).toFixed(2)}</span>
@@ -291,6 +294,21 @@ function getPaymentColor(status) {
         'refunded': 'info'
     };
     return colors[status] || 'secondary';
+}
+
+/**
+ * Format payment method for display
+ */
+function formatPaymentMethod(method) {
+    const methods = {
+        'cash': 'Cash',
+        'credit_card': 'Credit Card',
+        'debit_card': 'Debit Card',
+        'online': 'Online Payment',
+        'paypal': 'PayPal',
+        'bank_transfer': 'Bank Transfer'
+    };
+    return methods[method] || method || 'Not specified';
 }
 
 /**

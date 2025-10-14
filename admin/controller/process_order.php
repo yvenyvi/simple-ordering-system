@@ -1,12 +1,12 @@
 <?php
-// API to process orders from the frontend cart
+// Order processing endpoint - replaces API functionality
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: POST');
 header('Access-Control-Allow-Headers: Content-Type');
 
 // Include database connection
-require_once '../models/db_Model.php';
+require_once __DIR__ . "/../../models/db_Model.php";
 
 // Only allow POST requests
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {

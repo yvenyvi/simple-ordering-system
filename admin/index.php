@@ -189,9 +189,15 @@ include 'controller/index.php';
                         <div class="stat-card status-preparing">
                             <i class="fas fa-fire"></i>
                             <div class="stat-info">
-                                <h3><?php echo ($orderStatus['confirmed'] ?? 0) + ($orderStatus['preparing'] ?? 0); ?></h3>
+                                <h3><?php 
+                                    $confirmed = $orderStatus['confirmed'] ?? 0;
+                                    $preparing = $orderStatus['preparing'] ?? 0;
+                                    $inKitchen = $confirmed + $preparing;
+                                    echo $inKitchen;
+                                ?></h3>
                                 <p>In Kitchen</p>
-                                <small>Confirmed + Preparing</small>
+                                <small>Confirmed: <?php echo $confirmed; ?> + Preparing: <?php echo $preparing; ?></small>
+                                <!-- Debug: <?php echo "orderStatus array: " . json_encode($orderStatus); ?> -->
                             </div>
                         </div>
                         <div class="stat-card status-ready">

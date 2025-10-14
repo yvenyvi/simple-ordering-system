@@ -30,6 +30,14 @@ if (isset($_GET['action'])) {
     exit;
 }
 
+// Handle order processing from frontend (moved from API)
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && strpos($_SERVER['REQUEST_URI'], 'process_order') !== false) {
+    ob_clean();
+    // Redirect to dedicated process_order.php file
+    include 'process_order.php';
+    exit;
+}
+
 // Handle get order details AJAX request
 function handleGetOrderDetails() {
     global $connection;

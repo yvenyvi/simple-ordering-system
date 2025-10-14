@@ -31,7 +31,7 @@ ELSE
 
 ## Implementation
 
-### 1. API Endpoint (`api/update_order_status.php`)
+### 1. Order Management Controller (`admin/controller/order_list.php`)
 
 ```php
 // Automatic payment status determination

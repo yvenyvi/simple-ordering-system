@@ -1,5 +1,14 @@
 <?php
-require_once "../models/db_Model.php";
+require_once __DIR__ . "/../../models/db_Model.php";
+
+// Make sure we have access to the global connection
+global $connection;
+
+// Check database connection
+if (!$connection) {
+    error_log("Database connection not available in dashboard controller");
+    die("Database connection error");
+}
 
 // === BASIC COUNTS ===
 // Count menu items
@@ -63,9 +72,38 @@ $orderStatusQuery = "SELECT
                      WHERE DATE(order_date) = CURDATE()
                      GROUP BY status";
 $orderStatusResult = mysqli_query($connection, $orderStatusQuery);
+
+// Check for query errors
+if (!$orderStatusResult) {
+    error_log("Order status query failed: " . mysqli_error($connection));
+}
+
 $orderStatus = [];
-while ($row = mysqli_fetch_array($orderStatusResult)) {
-    $orderStatus[$row['status']] = $row['count'];
+if ($orderStatusResult) {
+    while ($row = mysqli_fetch_array($orderStatusResult)) {
+        $orderStatus[$row['status']] = $row['count'];
+    }
+}
+
+// Debug: Log the order status array
+error_log("Order status array: " . print_r($orderStatus, true));
+
+// If no orders today, check last 7 days for demo purposes
+if (empty($orderStatus)) {
+    $recentOrderStatusQuery = "SELECT 
+                                status,
+                                COUNT(*) as count
+                             FROM orders 
+                             WHERE order_date >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)
+                             GROUP BY status";
+    $recentOrderStatusResult = mysqli_query($connection, $recentOrderStatusQuery);
+    
+    if ($recentOrderStatusResult) {
+        while ($row = mysqli_fetch_array($recentOrderStatusResult)) {
+            $orderStatus[$row['status']] = $row['count'];
+        }
+        error_log("Using recent orders (last 7 days): " . print_r($orderStatus, true));
+    }
 }
 
 // === TOP PERFORMING ITEMS ===

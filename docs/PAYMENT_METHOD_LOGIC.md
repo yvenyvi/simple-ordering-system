@@ -37,7 +37,7 @@ For credit_card, debit_card, and online payments, payment is processed immediate
 
 ## Implementation Details
 
-### Order Creation (`process_order.php`)
+### Order Creation (`admin/controller/process_order.php`)
 ```php
 // Set initial payment status based on payment method
 $initial_payment_status = 'pending';
@@ -46,7 +46,7 @@ if (in_array($payment_method, ['credit_card', 'debit_card', 'online'])) {
 }
 ```
 
-### Status Updates (`update_order_status.php`)
+### Status Updates (`admin/controller/order_list.php`)
 The system checks the payment method and applies the appropriate logic:
 
 1. **Cash Orders**: Follow the traditional model where payment happens on delivery
@@ -84,7 +84,7 @@ The `orders` table must include:
 
 ## API Response Format
 
-The `update_order_status.php` API now returns:
+The order management controller now returns:
 ```json
 {
     "success": true,

@@ -13,6 +13,9 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 function initializeOrderManagement() {
+    // Initialize filters
+    applyOrderFilters();
+    
     // Status dropdown change handler
     document.addEventListener('change', function(e) {
         if (e.target.classList.contains('order-status-dropdown')) {
@@ -371,3 +374,183 @@ function quickStatusUpdate(orderId, newStatus) {
         }
     });
 }
+
+// Enhanced Order Filter Functions
+function applyOrderFilters() {
+    const statusFilter = document.getElementById('status-filter').value.toLowerCase();
+    const paymentFilter = document.getElementById('payment-filter').value.toLowerCase();
+    const searchFilter = document.getElementById('search-filter').value.toLowerCase();
+    const amountFilter = document.getElementById('amount-filter').value;
+    const dateFilter = document.getElementById('date-filter').value;
+    
+    const tableRows = document.querySelectorAll('.admin-enhanced-table tbody tr');
+    let visibleCount = 0;
+    
+    tableRows.forEach(row => {
+        let shouldShow = true;
+        
+        // Status filter
+        if (statusFilter && shouldShow) {
+            const statusCell = row.querySelector('td:nth-child(7)'); // Status column
+            if (statusCell) {
+                const statusElement = statusCell.querySelector('select') || statusCell.querySelector('.badge');
+                let statusText = '';
+                
+                if (statusElement) {
+                    if (statusElement.tagName === 'SELECT') {
+                        statusText = statusElement.value.toLowerCase();
+                    } else {
+                        statusText = statusElement.textContent.toLowerCase();
+                    }
+                }
+                
+                if (!statusText.includes(statusFilter)) {
+                    shouldShow = false;
+                }
+            }
+        }
+        
+        // Payment status filter
+        if (paymentFilter && shouldShow) {
+            const paymentCell = row.querySelector('td:nth-child(8)'); // Payment Status column
+            if (paymentCell) {
+                const paymentBadge = paymentCell.querySelector('.badge');
+                const paymentText = paymentBadge ? paymentBadge.textContent.toLowerCase() : '';
+                
+                if (!paymentText.includes(paymentFilter)) {
+                    shouldShow = false;
+                }
+            }
+        }
+        
+        // Amount filter
+        if (amountFilter && shouldShow) {
+            const amountCell = row.querySelector('td:nth-child(6) .cell-price'); // Total Amount column
+            if (amountCell) {
+                const amountText = amountCell.textContent.replace('$', '').replace(',', '');
+                const amount = parseFloat(amountText);
+                
+                if (!isNaN(amount)) {
+                    switch (amountFilter) {
+                        case '0-25':
+                            if (amount > 25) shouldShow = false;
+                            break;
+                        case '25-50':
+                            if (amount < 25 || amount > 50) shouldShow = false;
+                            break;
+                        case '50-100':
+                            if (amount < 50 || amount > 100) shouldShow = false;
+                            break;
+                        case '100+':
+                            if (amount < 100) shouldShow = false;
+                            break;
+                    }
+                }
+            }
+        }
+        
+        // Date filter
+        if (dateFilter && shouldShow) {
+            const dateCell = row.querySelector('td:nth-child(9) .cell-date'); // Order Date column
+            if (dateCell) {
+                const dateText = dateCell.textContent;
+                const orderDate = new Date(dateText);
+                const today = new Date();
+                const yesterday = new Date(today);
+                yesterday.setDate(yesterday.getDate() - 1);
+                
+                switch (dateFilter) {
+                    case 'today':
+                        if (orderDate.toDateString() !== today.toDateString()) {
+                            shouldShow = false;
+                        }
+                        break;
+                    case 'yesterday':
+                        if (orderDate.toDateString() !== yesterday.toDateString()) {
+                            shouldShow = false;
+                        }
+                        break;
+                    case 'week':
+                        const weekAgo = new Date(today);
+                        weekAgo.setDate(weekAgo.getDate() - 7);
+                        if (orderDate < weekAgo) {
+                            shouldShow = false;
+                        }
+                        break;
+                    case 'month':
+                        const monthAgo = new Date(today);
+                        monthAgo.setMonth(monthAgo.getMonth() - 1);
+                        if (orderDate < monthAgo) {
+                            shouldShow = false;
+                        }
+                        break;
+                }
+            }
+        }
+        
+        // Search filter (customer name, email, order ID)
+        if (searchFilter && shouldShow) {
+            const orderIdCell = row.querySelector('td:nth-child(1)'); // Order #
+            const customerCell = row.querySelector('td:nth-child(2)'); // Customer
+            const emailCell = row.querySelector('td:nth-child(3)'); // Email
+            
+            const orderIdText = orderIdCell ? orderIdCell.textContent.toLowerCase() : '';
+            const customerText = customerCell ? customerCell.textContent.toLowerCase() : '';
+            const emailText = emailCell ? emailCell.textContent.toLowerCase() : '';
+            
+            const searchText = orderIdText + ' ' + customerText + ' ' + emailText;
+            
+            if (!searchText.includes(searchFilter)) {
+                shouldShow = false;
+            }
+        }
+        
+        if (shouldShow) {
+            row.style.display = '';
+            visibleCount++;
+        } else {
+            row.style.display = 'none';
+        }
+    });
+    
+    // Update results count
+    updateOrderResultsCount(visibleCount, tableRows.length);
+}
+
+function clearOrderFilters() {
+    document.getElementById('status-filter').value = '';
+    document.getElementById('payment-filter').value = '';
+    document.getElementById('search-filter').value = '';
+    document.getElementById('amount-filter').value = '';
+    document.getElementById('date-filter').value = '';
+    applyOrderFilters();
+}
+
+function updateOrderResultsCount(visible, total) {
+    let countDisplay = document.getElementById('results-count');
+    if (!countDisplay) {
+        countDisplay = document.createElement('div');
+        countDisplay.id = 'results-count';
+        countDisplay.className = 'results-count';
+        const filterActions = document.querySelector('.filter-actions');
+        if (filterActions) {
+            filterActions.appendChild(countDisplay);
+        }
+    }
+    
+    if (visible === total) {
+        countDisplay.innerHTML = `<span class="text-muted">Showing all ${total} orders</span>`;
+    } else {
+        countDisplay.innerHTML = `<span class="text-primary">Showing ${visible} of ${total} orders</span>`;
+    }
+}
+
+// Initialize filters when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    // Apply filters after a short delay to ensure table is rendered
+    setTimeout(() => {
+        if (typeof applyOrderFilters === 'function') {
+            applyOrderFilters();
+        }
+    }, 100);
+});

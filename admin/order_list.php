@@ -17,6 +17,74 @@ require_once 'controller/order_list.php';
                     <h1>Order Management</h1>
                 </div>
 
+                <!-- Search and Filter Controls -->
+                <div class="filters-container">
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-4">
+                            <label for="search-filter" class="form-label">
+                                <i class="fas fa-search"></i> Search
+                            </label>
+                            <input type="text" id="search-filter" class="form-control" placeholder="Search by customer name, email, order ID..." onkeyup="applyOrderFilters()">
+                        </div>
+                        <div class="col-md-2">
+                            <label for="status-filter" class="form-label">
+                                <i class="fas fa-info-circle"></i> Order Status
+                            </label>
+                            <select id="status-filter" class="form-select" onchange="applyOrderFilters()">
+                                <option value="">All Statuses</option>
+                                <option value="pending">Pending</option>
+                                <option value="confirmed">Confirmed</option>
+                                <option value="preparing">Preparing</option>
+                                <option value="ready">Ready</option>
+                                <option value="delivered">Delivered</option>
+                                <option value="cancelled">Cancelled</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label for="payment-filter" class="form-label">
+                                <i class="fas fa-credit-card"></i> Payment Status
+                            </label>
+                            <select id="payment-filter" class="form-select" onchange="applyOrderFilters()">
+                                <option value="">All Payments</option>
+                                <option value="paid">Paid</option>
+                                <option value="pending">Pending</option>
+                                <option value="failed">Failed</option>
+                                <option value="refunded">Refunded</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label for="amount-filter" class="form-label">
+                                <i class="fas fa-dollar-sign"></i> Order Amount
+                            </label>
+                            <select id="amount-filter" class="form-select" onchange="applyOrderFilters()">
+                                <option value="">All Amounts</option>
+                                <option value="0-25">$0 - $25</option>
+                                <option value="25-50">$25 - $50</option>
+                                <option value="50-100">$50 - $100</option>
+                                <option value="100+">$100+</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label for="date-filter" class="form-label">
+                                <i class="fas fa-calendar"></i> Order Date
+                            </label>
+                            <select id="date-filter" class="form-select" onchange="applyOrderFilters()">
+                                <option value="">All Dates</option>
+                                <option value="today">Today</option>
+                                <option value="yesterday">Yesterday</option>
+                                <option value="week">This Week</option>
+                                <option value="month">This Month</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="filter-actions">
+                        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="clearOrderFilters()">
+                            <i class="fas fa-times"></i> Clear Filters
+                        </button>
+                        <div id="results-count" class="results-count ms-3"></div>
+                    </div>
+                </div>
+
                 <!-- Orders List -->
                 <div class="table-container">
                     <?php

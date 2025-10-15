@@ -6,62 +6,42 @@ function display_admin_table($table_name, $sql = null, $options = array()) {
     // Get table columns for configuration
     $columns = getTableColumns($table_name);
     if (empty($columns)) {
-        echo '<div class="admin-empty-state">';
-        echo '<i class="fas fa-exclamation-triangle"></i>';
-        echo '<h3>Table Error</h3>';
-        echo '<p>Could not load table configuration for: ' . htmlspecialchars($table_name) . '</p>';
-        echo '</div>';
+        echo HtmlGenerator::renderEmptyState(
+            'fas fa-exclamation-triangle',
+            'Table Error',
+            'Could not load table configuration for: ' . $table_name
+        );
         return;
     }
     
     // Build SQL query if not provided with smart ordering
     if (!$sql) {
-        // Determine best ordering column based on table structure
-        $order_column = 'created_at';
-        if (isset($columns['updated_at'])) {
-            $order_column = 'updated_at';
-        } elseif (isset($columns['event_date'])) {
-            $order_column = 'event_date';
-        } elseif (isset($columns['date'])) {
-            $order_column = 'date';
-        } elseif (!isset($columns['created_at'])) {
-            // If no date columns, use the ID field
-            $id_field = $table_name . '_id';
-            $order_column = isset($columns[$id_field]) ? $id_field : 'id';
-        }
-        
-        $sql = "SELECT * FROM " . $table_name . " ORDER BY " . $order_column . " DESC";
+        $order_by = TableConfig::getOrderBy($table_name);
+        $sql = "SELECT * FROM " . $table_name . " ORDER BY " . $order_by;
     }
     
     // Execute query
     $result = mysqli_query($connection, $sql);
     if (!$result) {
-        echo '<div class="admin-empty-state">';
-        echo '<i class="fas fa-exclamation-triangle"></i>';
-        echo '<h3>Query Error</h3>';
-        echo '<p>Error executing query: ' . mysqli_error($connection) . '</p>';
-        echo '</div>';
+        echo HtmlGenerator::renderEmptyState(
+            'fas fa-exclamation-triangle',
+            'Query Error',
+            'Error executing query: ' . mysqli_error($connection)
+        );
         return;
     }
-    
+
     $rowCount = mysqli_num_rows($result);
     
-    // Configuration with correct ID field mapping
-    $id_field_mapping = [
-        'users' => 'user_id',
-        'menu' => 'menu_id', 
-        'events' => 'event_id',
-        'orders' => 'order_id'
-    ];
-    
+    // Configuration using centralized TableConfig
     $config = array_merge(array(
-        'title' => ucfirst($table_name),
-        'icon' => getTableIcon($table_name),
+        'title' => TableConfig::getTitle($table_name),
+        'icon' => TableConfig::getIcon($table_name),
         'empty_message' => 'No ' . $table_name . ' found. Click the button above to add your first entry.',
-        'id_field' => isset($id_field_mapping[$table_name]) ? $id_field_mapping[$table_name] : $table_name . '_id',
-        'image_directory' => getImageDirectory($table_name),
+        'id_field' => TableConfig::getIdField($table_name),
+        'image_directory' => TableConfig::getImageDirectory($table_name),
         'columns' => $options['columns'] ?? generateDisplayColumns($columns, $table_name),
-        'actions' => $options['actions'] ?? array('delete')
+        'actions' => $options['actions'] ?? TableConfig::getActions($table_name)
     ), $options);
     
     // Render the table

@@ -10,7 +10,14 @@ if (mysqli_connect_errno()) {
         mysqli_connect_error() .
         "(" . mysqli_connect_errno() . ")"
     );
-}       
+}
+
+// Initialize helper classes with database connection
+require_once dirname(__FILE__) . '/QueryHelper.php';
+require_once dirname(__FILE__) . '/TableConfig.php';
+require_once dirname(__FILE__) . '/HtmlGenerator.php';
+
+QueryHelper::init($connection);
 
 function redirect_to($new_location) {
     header("Location: ".$new_location);
@@ -81,29 +88,11 @@ function save($table, $data){
     }
 
 function get_upload_directory($table) {
-    $base_dir = "../assets/images/";
-    
-    $directory_map = array(
-        'menu' => 'products/'
-    );
-
-    if (isset($directory_map[$table])) {
-        return $base_dir . $directory_map[$table];
-    } else {
-        return $base_dir . $table . '/';
-    }
+    return "../assets/images/" . TableConfig::getImageDirectory($table) . "/";
 }
 
 function get_id_field_name($table) {
-    // Map table names to correct ID field names
-    $id_field_mapping = [
-        'users' => 'user_id',
-        'menu' => 'menu_id',
-        'events' => 'event_id',
-        'orders' => 'order_id'
-    ];
-    
-    return isset($id_field_mapping[$table]) ? $id_field_mapping[$table] : $table . '_id';
+    return TableConfig::getIdField($table);
 }
 
 function get_image_path($row, $table) {
@@ -158,7 +147,7 @@ function getTableColumns($table_name) {
 
 
 function display_menu_table($sql = null) {
-    // Custom configuration for menu table with view action and limited columns
+    // Use centralized configuration
     $options = [
         'columns' => [
             'image_url' => [
@@ -190,17 +179,23 @@ function display_menu_table($sql = null) {
                 'type' => 'datetime'
             ]
         ],
-        'actions' => ['view', 'edit', 'toggle', 'delete']
+        'actions' => TableConfig::getActions('menu')
     ];
     display_table('menu', $sql, $options);
 }
 
 function display_users_table($sql = null) {
-    display_table('users', $sql);
+    $options = [
+        'actions' => TableConfig::getActions('users')
+    ];
+    display_table('users', $sql, $options);
 }
 
 function display_events_table($sql = null) {
-    display_table('events', $sql);
+    $options = [
+        'actions' => TableConfig::getActions('events')
+    ];
+    display_table('events', $sql, $options);
 }
 
 function display_orders_table($sql = null) {
@@ -244,7 +239,7 @@ function display_orders_table($sql = null) {
                 'type' => 'datetime'
             ]
         ],
-        'actions' => ['view', 'delete']
+        'actions' => TableConfig::getActions('orders')
     ];
     
     display_table('orders', $sql, $options);

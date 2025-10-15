@@ -18,7 +18,8 @@ class TableConfig {
             'actions' => ['view', 'edit', 'delete'],
             'admin_page' => 'user_list.php',
             'title' => 'Users',
-            'order_by' => 'created_at DESC'
+            'order_by' => 'created_at DESC',
+            'excluded_fields' => ['address', 'city', 'state', 'password']
         ],
         'menu' => [
             'id_field' => 'menu_id',
@@ -281,6 +282,13 @@ class TableConfig {
      */
     public static function getAllTables() {
         return array_keys(self::$config);
+    }
+
+    /**
+     * Get excluded fields for a table
+     */
+    public static function getExcludedFields($table) {
+        return self::$config[$table]['excluded_fields'] ?? [];
     }
 }
 

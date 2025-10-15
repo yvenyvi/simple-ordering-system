@@ -152,13 +152,30 @@ function renderStatsCards($table_name, $rowCount, $config) {
     } elseif ($table_name === 'users') {
         // User-specific enhanced stats
         $total_result = mysqli_query($connection, "SELECT COUNT(*) as count FROM $table_name");
-        $total_count = mysqli_fetch_array($total_result)['count'];
+        $total_count = $total_result ? mysqli_fetch_array($total_result)['count'] : 0;
         
-        $recent_result = mysqli_query($connection, "SELECT COUNT(*) as count FROM $table_name WHERE created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)");
-        $recent_count = mysqli_fetch_array($recent_result)['count'];
+        // Check if created_at column exists before querying recent stats
+        $columns = getTableColumns($table_name);
+        $recent_count = 0;
+        if (isset($columns['created_at'])) {
+            $recent_result = mysqli_query($connection, "SELECT COUNT(*) as count FROM $table_name WHERE created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)");
+            $recent_count = $recent_result ? mysqli_fetch_array($recent_result)['count'] : 0;
+        }
         
-        $active_result = mysqli_query($connection, "SELECT COUNT(*) as count FROM $table_name WHERE status = 'active'");
-        $active_count = mysqli_fetch_array($active_result)['count'];
+        // Check if status column exists before querying
+        $active_count = 0;
+        if (isset($columns['status'])) {
+            $active_result = mysqli_query($connection, "SELECT COUNT(*) as count FROM $table_name WHERE status = 'active'");
+            if ($active_result) {
+                $active_count = mysqli_fetch_array($active_result)['count'];
+            } else {
+                error_log("Failed to query status for table $table_name: " . mysqli_error($connection));
+                $active_count = 0;
+            }
+        } else {
+            // If no status column, assume all users are active
+            $active_count = $total_count;
+        }
         
         echo '<div class="admin-stat-card total-users">';
         echo '<div class="stat-icon"><i class="fas fa-users"></i></div>';
@@ -169,14 +186,17 @@ function renderStatsCards($table_name, $rowCount, $config) {
         echo '</div>';
         echo '</div>';
         
-        echo '<div class="admin-stat-card new-users">';
-        echo '<div class="stat-icon"><i class="fas fa-user-plus"></i></div>';
-        echo '<div class="stat-content">';
-        echo '<h3>New This Month</h3>';
-        echo '<div class="stat-number">' . $recent_count . '</div>';
-        echo '<small>last 30 days</small>';
-        echo '</div>';
-        echo '</div>';
+        // Only show new users card if we have created_at column
+        if (isset($columns['created_at'])) {
+            echo '<div class="admin-stat-card new-users">';
+            echo '<div class="stat-icon"><i class="fas fa-user-plus"></i></div>';
+            echo '<div class="stat-content">';
+            echo '<h3>New This Month</h3>';
+            echo '<div class="stat-number">' . $recent_count . '</div>';
+            echo '<small>last 30 days</small>';
+            echo '</div>';
+            echo '</div>';
+        }
         
     } elseif ($table_name === 'orders') {
         // Order-specific enhanced stats
@@ -475,6 +495,8 @@ function renderActionButtons($row, $table_name, $config) {
             $html .= '<a href="#" class="btn-action btn-view" onclick="viewOrderDetails(' . intval($id) . '); return false;" title="View Details">';
         } elseif ($table_name === 'menu') {
             $html .= '<a href="#" class="btn-action btn-view" onclick="viewMenuDetails(' . intval($id) . '); return false;" title="View Details">';
+        } elseif ($table_name === 'users') {
+            $html .= '<a href="#" class="btn-action btn-view" onclick="viewUserDetails(' . intval($id) . '); return false;" title="View Details">';
         } else {
             $html .= '<a href="#" class="btn-action btn-view" onclick="viewDetails(' . intval($id) . '); return false;" title="View Details">';
         }
@@ -486,6 +508,8 @@ function renderActionButtons($row, $table_name, $config) {
     if (in_array('edit', $actions)) {
         if ($table_name === 'menu') {
             $html .= '<a href="#" class="btn-action btn-edit" onclick="editMenuItem(' . intval($id) . '); return false;" title="Edit Item">';
+        } elseif ($table_name === 'users') {
+            $html .= '<a href="#" class="btn-action btn-edit" onclick="editUser(' . intval($id) . '); return false;" title="Edit User">';
         } else {
             $html .= '<a href="#" class="btn-action btn-edit" onclick="editItem(' . intval($id) . '); return false;" title="Edit">';
         }
@@ -581,8 +605,14 @@ function detectColumnDisplayType($field, $info) {
  */
 function generateDisplayColumns($columns, $table_name) {
     $display_columns = array();
+    $excluded_fields = TableConfig::getExcludedFields($table_name);
     
     foreach ($columns as $column_name => $column_info) {
+        // Skip excluded fields
+        if (in_array($column_name, $excluded_fields)) {
+            continue;
+        }
+        
         // Skip technical fields
         if (in_array($column_name, ['created_at', 'updated_at']) && count($columns) > 5) {
             continue;
@@ -625,4 +655,32 @@ function getImageDirectory($table_name) {
     
     return $directories[$table_name] ?? 'general';
 }
+
+/**
+ * Safely execute a count query only if the specified column exists
+ */
+function safeCountQuery($table_name, $column_name, $condition = null) {
+    global $connection;
+    
+    $columns = getTableColumns($table_name);
+    
+    // Check if column exists
+    if (!isset($columns[$column_name])) {
+        return 0;
+    }
+    
+    // Build the query
+    $sql = "SELECT COUNT(*) as count FROM `$table_name`";
+    if ($condition) {
+        $sql .= " WHERE $condition";
+    }
+    
+    $result = mysqli_query($connection, $sql);
+    if ($result) {
+        return mysqli_fetch_array($result)['count'];
+    }
+    
+    return 0;
+}
+
 ?>

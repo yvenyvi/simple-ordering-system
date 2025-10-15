@@ -94,6 +94,133 @@ require_once 'controller/user_list.php';
         </main>
     </div>
 
+    <!-- User View Details Modal -->
+    <div class="modal fade" id="userViewModal" tabindex="-1" aria-labelledby="userViewModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="userViewModalLabel">
+                        <i class="fas fa-user"></i> User Details
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row" id="userViewContent">
+                        <!-- User details will be loaded here -->
+                        <div class="text-center">
+                            <div class="spinner-border" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times"></i> Close
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- User Edit Modal -->
+    <div class="modal fade" id="userEditModal" tabindex="-1" aria-labelledby="userEditModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="userEditModalLabel">
+                        <i class="fas fa-edit"></i> Edit User
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form id="editUserForm" method="POST" action="controller/user_list.php">
+                    <div class="modal-body">
+                        <input type="hidden" id="edit-user-id" name="edit_user_id" value="">
+                        <input type="hidden" name="action" value="edit">
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label for="edit-first-name" class="form-label">First Name *</label>
+                                    <input type="text" class="form-control" id="edit-first-name" name="first_name" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label for="edit-last-name" class="form-label">Last Name *</label>
+                                    <input type="text" class="form-control" id="edit-last-name" name="last_name" required>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label for="edit-email" class="form-label">Email *</label>
+                                    <input type="email" class="form-control" id="edit-email" name="email" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label for="edit-phone" class="form-label">Phone</label>
+                                    <input type="tel" class="form-control" id="edit-phone" name="phone">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group mb-3">
+                            <label for="edit-address" class="form-label">Address</label>
+                            <textarea class="form-control" id="edit-address" name="address" rows="2"></textarea>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="form-group mb-3">
+                                    <label for="edit-city" class="form-label">City</label>
+                                    <input type="text" class="form-control" id="edit-city" name="city">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group mb-3">
+                                    <label for="edit-state" class="form-label">State</label>
+                                    <input type="text" class="form-control" id="edit-state" name="state">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group mb-3">
+                                    <label for="edit-zip-code" class="form-label">ZIP Code</label>
+                                    <input type="text" class="form-control" id="edit-zip-code" name="zip_code">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="edit-is-active" name="is_active" value="1">
+                                <label class="form-check-label" for="edit-is-active">
+                                    Active User
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i> 
+                            Password cannot be changed through this form for security reasons.
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                            <i class="fas fa-times"></i> Cancel
+                        </button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Update User
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <!-- Existing Admin JS -->

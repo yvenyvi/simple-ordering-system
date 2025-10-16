@@ -4,7 +4,12 @@
  */
 
 document.addEventListener('DOMContentLoaded', function() {
+    // Initialize user management
     initializeUserManagement();
+    
+    // Initialize results count
+    const tableRows = document.querySelectorAll('.admin-enhanced-table tbody tr, table tbody tr');
+    updateResultsCount(tableRows.length, tableRows.length);
 });
 
 function initializeUserManagement() {
@@ -195,4 +200,153 @@ function populateEditForm(user) {
     // Handle is_active checkbox
     const isActive = (user.is_active == 1 || user.is_active === '1' || user.is_active === true || user.is_active === 'true');
     document.getElementById('edit-is-active').checked = isActive;
+}
+
+/**
+ * Apply user filters and search
+ */
+function applyUserFilters() {
+    const searchTerm = document.getElementById('search-filter').value.toLowerCase();
+    const statusFilter = document.getElementById('status-filter').value;
+    const dateFilter = document.getElementById('date-filter').value;
+    const locationFilter = document.getElementById('location-filter').value;
+    
+    const tableRows = document.querySelectorAll('.admin-enhanced-table tbody tr, table tbody tr');
+    let visibleCount = 0;
+    
+    tableRows.forEach((row, index) => {
+        let showRow = true;
+        
+        // Search filter
+        if (searchTerm) {
+            const searchableText = row.textContent.toLowerCase();
+            if (!searchableText.includes(searchTerm)) {
+                showRow = false;
+            }
+        }
+        
+        // Status filter
+        if (statusFilter && showRow) {
+            const statusCell = row.querySelector('.cell-boolean');
+            if (statusCell) {
+                const isActive = statusCell.textContent.trim().toLowerCase() === 'yes';
+                if (statusFilter === 'active' && !isActive) {
+                    showRow = false;
+                } else if (statusFilter === 'inactive' && isActive) {
+                    showRow = false;
+                }
+            }
+        }
+        
+        // Date filter
+        if (dateFilter && showRow) {
+            const dateCell = row.querySelector('.cell-date');
+            if (dateCell) {
+                const dateText = dateCell.textContent.trim();
+                if (dateText && dateText !== '-' && dateText !== 'N/A') {
+                    // Parse the date from the displayed text
+                    const rowDate = new Date(dateText);
+                    
+                    // Check if date is valid
+                    if (!isNaN(rowDate.getTime())) {
+                        const now = new Date();
+                        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                        
+                        let dateMatch = false;
+                        switch (dateFilter) {
+                            case 'today':
+                                const rowDateOnly = new Date(rowDate.getFullYear(), rowDate.getMonth(), rowDate.getDate());
+                                dateMatch = rowDateOnly.getTime() === today.getTime();
+                                break;
+                            case 'yesterday':
+                                const yesterday = new Date(today);
+                                yesterday.setDate(yesterday.getDate() - 1);
+                                const rowDateYesterday = new Date(rowDate.getFullYear(), rowDate.getMonth(), rowDate.getDate());
+                                dateMatch = rowDateYesterday.getTime() === yesterday.getTime();
+                                break;
+                            case 'week':
+                                const weekAgo = new Date(today);
+                                weekAgo.setDate(weekAgo.getDate() - 7);
+                                dateMatch = rowDate >= weekAgo;
+                                break;
+                            case 'month':
+                                const monthAgo = new Date(today);
+                                monthAgo.setMonth(monthAgo.getMonth() - 1);
+                                dateMatch = rowDate >= monthAgo;
+                                break;
+                            case 'year':
+                                const yearAgo = new Date(today);
+                                yearAgo.setFullYear(yearAgo.getFullYear() - 1);
+                                dateMatch = rowDate >= yearAgo;
+                                break;
+                        }
+                        
+                        if (!dateMatch) {
+                            showRow = false;
+                        }
+                    }
+                }
+            }
+        }
+        
+        // Location filter - simplified approach
+        if (locationFilter && showRow) {
+            const rowText = row.textContent.toLowerCase();
+            // Simple check for presence of address-like content
+            const hasAddressInfo = rowText.includes('st ') || rowText.includes('ave ') || 
+                                   rowText.includes('rd ') || rowText.includes('blvd ') ||
+                                   rowText.includes('dr ') || rowText.includes('ln ') ||
+                                   /\d{5}/.test(rowText); // ZIP code pattern
+            
+            if (locationFilter === 'has-address' && !hasAddressInfo) {
+                showRow = false;
+            } else if (locationFilter === 'no-address' && hasAddressInfo) {
+                showRow = false;
+            }
+        }
+        
+        // Show/hide row
+        if (showRow) {
+            row.style.display = '';
+            visibleCount++;
+        } else {
+            row.style.display = 'none';
+        }
+    });
+    
+    // Update results count
+    updateResultsCount(visibleCount, tableRows.length);
+}
+
+/**
+ * Clear all user filters
+ */
+function clearUserFilters() {
+    document.getElementById('search-filter').value = '';
+    document.getElementById('status-filter').value = '';
+    document.getElementById('date-filter').value = '';
+    document.getElementById('location-filter').value = '';
+    
+    // Show all rows
+    const tableRows = document.querySelectorAll('.admin-enhanced-table tbody tr, table tbody tr');
+    tableRows.forEach(row => {
+        row.style.display = '';
+    });
+    
+    // Update results count
+    updateResultsCount(tableRows.length, tableRows.length);
+}
+
+/**
+ * Update results count display
+ */
+function updateResultsCount(visible, total) {
+    const resultsCount = document.getElementById('results-count');
+    if (resultsCount) {
+        if (visible === total) {
+            resultsCount.textContent = `Showing ${total} users`;
+        } else {
+            resultsCount.textContent = `Showing ${visible} of ${total} users`;
+        }
+    }
 }

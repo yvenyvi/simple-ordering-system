@@ -1219,10 +1219,6 @@ div.admin-enhanced-table {
     border-bottom: none !important;
 }
 
-.order-info {
-    flex: 1 !important;
-}
-
 .order-info strong {
     color: #1e293b !important;
     font-size: 14px !important;
@@ -1294,8 +1290,9 @@ div.admin-enhanced-table {
 .order-time {
     color: #94a3b8 !important;
     font-size: 12px !important;
-    margin-top: 8px !important;
+    margin: 8px 0px 0px 8px !important;
     font-weight: 400 !important;
+    padding: 8px  !important
 }
 
 /* Upcoming Events Widget */

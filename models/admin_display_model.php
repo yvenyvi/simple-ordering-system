@@ -613,8 +613,9 @@ function generateDisplayColumns($columns, $table_name) {
             continue;
         }
         
-        // Skip technical fields
-        if (in_array($column_name, ['created_at', 'updated_at']) && count($columns) > 5) {
+        // Skip technical fields (but keep created_at for users table since we need it for filtering)
+        if ($column_name === 'updated_at' || 
+            ($column_name === 'created_at' && $table_name !== 'users' && count($columns) > 5)) {
             continue;
         }
         

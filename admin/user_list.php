@@ -21,6 +21,57 @@ require_once 'controller/user_list.php';
                     </button>
                 </div>
 
+                <!-- Search and Filter Controls -->
+                <div class="filters-container">
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-4">
+                            <label for="search-filter" class="form-label">
+                                <i class="fas fa-search"></i> Search
+                            </label>
+                            <input type="text" id="search-filter" class="form-control" placeholder="Search by name, email, phone..." onkeyup="applyUserFilters()">
+                        </div>
+                        <div class="col-md-3">
+                            <label for="status-filter" class="form-label">
+                                <i class="fas fa-user-check"></i> User Status
+                            </label>
+                            <select id="status-filter" class="form-select" onchange="applyUserFilters()">
+                                <option value="">All Users</option>
+                                <option value="active">Active Users</option>
+                                <option value="inactive">Inactive Users</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="date-filter" class="form-label">
+                                <i class="fas fa-calendar"></i> Registration Date
+                            </label>
+                            <select id="date-filter" class="form-select" onchange="applyUserFilters()">
+                                <option value="">All Dates</option>
+                                <option value="today">Today</option>
+                                <option value="yesterday">Yesterday</option>
+                                <option value="week">This Week</option>
+                                <option value="month">This Month</option>
+                                <option value="year">This Year</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label for="location-filter" class="form-label">
+                                <i class="fas fa-map-marker-alt"></i> Location
+                            </label>
+                            <select id="location-filter" class="form-select" onchange="applyUserFilters()">
+                                <option value="">All Locations</option>
+                                <option value="has-address">Has Address</option>
+                                <option value="no-address">No Address</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="filter-actions">
+                        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="clearUserFilters()">
+                            <i class="fas fa-times"></i> Clear Filters
+                        </button>
+                        <div id="results-count" class="results-count ms-3"></div>
+                    </div>
+                </div>
+
                 <!-- Add User Form -->
                 <div id="add-user-form" class="form-container" style="display: none;">
                     <h3>Add New User</h3>

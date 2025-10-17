@@ -39,7 +39,8 @@ class TableConfig {
             'actions' => ['view', 'edit', 'delete'],
             'admin_page' => 'event_list.php',
             'title' => 'Events',
-            'order_by' => 'event_date DESC'
+            'order_by' => 'event_date DESC',
+            'excluded_fields' => ['description', 'requirements', 'contact_email', 'contact_phone', 'created_at', 'updated_at']
         ],
         'orders' => [
             'id_field' => 'order_id',

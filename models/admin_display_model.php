@@ -497,6 +497,8 @@ function renderActionButtons($row, $table_name, $config) {
             $html .= '<a href="#" class="btn-action btn-view" onclick="viewMenuDetails(' . intval($id) . '); return false;" title="View Details">';
         } elseif ($table_name === 'users') {
             $html .= '<a href="#" class="btn-action btn-view" onclick="viewUserDetails(' . intval($id) . '); return false;" title="View Details">';
+        } elseif ($table_name === 'events') {
+            $html .= '<a href="#" class="btn-action btn-view" onclick="viewEventDetails(' . intval($id) . '); return false;" title="View Details">';
         } else {
             $html .= '<a href="#" class="btn-action btn-view" onclick="viewDetails(' . intval($id) . '); return false;" title="View Details">';
         }

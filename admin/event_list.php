@@ -20,6 +20,61 @@ require_once 'controller/event_list.php';
                     </button>
                 </div>
 
+                <!-- Search and Filter Controls -->
+                <div class="filters-container">
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-4">
+                            <label for="search-filter" class="form-label">
+                                <i class="fas fa-search"></i> Search
+                            </label>
+                            <input type="text" id="search-filter" class="form-control" placeholder="Search by name, location, description..." onkeyup="applyEventFilters()">
+                        </div>
+                        <div class="col-md-3">
+                            <label for="event-type-filter" class="form-label">
+                                <i class="fas fa-tags"></i> Event Type
+                            </label>
+                            <select id="event-type-filter" class="form-select" onchange="applyEventFilters()">
+                                <option value="">All Types</option>
+                                <option value="workshop">Workshop</option>
+                                <option value="tasting">Tasting</option>
+                                <option value="party">Party</option>
+                                <option value="cooking_class">Cooking Class</option>
+                                <option value="special_dinner">Special Dinner</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="status-filter" class="form-label">
+                                <i class="fas fa-toggle-on"></i> Status
+                            </label>
+                            <select id="status-filter" class="form-select" onchange="applyEventFilters()">
+                                <option value="">All Events</option>
+                                <option value="1">Active Only</option>
+                                <option value="0">Inactive Only</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label for="date-filter" class="form-label">
+                                <i class="fas fa-calendar"></i> Date
+                            </label>
+                            <select id="date-filter" class="form-select" onchange="applyEventFilters()">
+                                <option value="">All Dates</option>
+                                <option value="upcoming">Upcoming</option>
+                                <option value="past">Past Events</option>
+                                <option value="today">Today</option>
+                                <option value="this-week">This Week</option>
+                                <option value="this-month">This Month</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="filter-actions">
+                        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="clearEventFilters()">
+                            <i class="fas fa-times"></i> Clear Filters
+                        </button>
+                        <div id="results-count" class="results-count ms-3"></div>
+                    </div>
+                </div>
+
                 <!-- Add Event Form -->
                 <div id="add-event-form" class="form-container" style="display: none;">
                     <h3>Add New Event</h3>
@@ -166,6 +221,10 @@ require_once 'controller/event_list.php';
 
             <?php if (isset($error_message)): ?>
                 showEventMessages(null, '<?php echo addslashes($error_message); ?>');
+            <?php endif; ?>
+
+            <?php if (isset($info_message)): ?>
+                showEventInfoMessage('<?php echo addslashes($info_message); ?>');
             <?php endif; ?>
         });
     </script>

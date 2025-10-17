@@ -6,6 +6,9 @@
 
 require_once __DIR__ . "/../../models/db_Model.php";
 
+// Automatically deactivate past events on every page load
+deactivatePastEvents();
+
 // Route requests to appropriate handlers
 if (isset($_GET['action']) && $_GET['action'] === 'view' && isset($_GET['id'])) {
     handleViewEvent();
@@ -255,6 +258,151 @@ function handleEventImageUpload($event_id) {
         
     } catch (Exception $e) {
         error_log("Error updating event image URL: " . $e->getMessage());
+        return false;
+    }
+}
+
+/**
+ * Automatically deactivate events that have passed their scheduled date
+ * This function runs every time the event management page is accessed
+ */
+function deactivatePastEvents() {
+    global $connection;
+    
+    try {
+        // Get current date and time
+        $current_datetime = date('Y-m-d H:i:s');
+        $current_date = date('Y-m-d');
+        
+        // Find events that are past their date and still active
+        // We'll check both events that are completely past (date + time) and events with just past dates
+        $sql = "SELECT event_id, event_name, event_date, event_time 
+                FROM events 
+                WHERE is_active = 1 
+                AND (
+                    (event_date < ? AND event_time IS NOT NULL) 
+                    OR 
+                    (event_date < ? AND event_time IS NULL)
+                    OR 
+                    (event_date = ? AND event_time IS NOT NULL AND CONCAT(event_date, ' ', event_time, ':00') < ?)
+                )";
+        
+        $stmt = mysqli_prepare($connection, $sql);
+        if (!$stmt) {
+            error_log("Error preparing past events query: " . mysqli_error($connection));
+            return false;
+        }
+        
+        mysqli_stmt_bind_param($stmt, "ssss", $current_date, $current_date, $current_date, $current_datetime);
+        
+        if (!mysqli_stmt_execute($stmt)) {
+            error_log("Error executing past events query: " . mysqli_stmt_error($stmt));
+            mysqli_stmt_close($stmt);
+            return false;
+        }
+        
+        $result = mysqli_stmt_get_result($stmt);
+        $past_events = [];
+        
+        // Collect past events
+        while ($event = mysqli_fetch_assoc($result)) {
+            $past_events[] = $event;
+        }
+        mysqli_stmt_close($stmt);
+        
+        // If there are past events, deactivate them
+        if (!empty($past_events)) {
+            $event_ids = array_column($past_events, 'event_id');
+            $placeholders = str_repeat('?,', count($event_ids) - 1) . '?';
+            
+            $update_sql = "UPDATE events SET is_active = 0 WHERE event_id IN ($placeholders)";
+            $update_stmt = mysqli_prepare($connection, $update_sql);
+            
+            if (!$update_stmt) {
+                error_log("Error preparing past events update query: " . mysqli_error($connection));
+                return false;
+            }
+            
+            // Create types string (one 'i' for each integer event_id)
+            $types = str_repeat('i', count($event_ids));
+            mysqli_stmt_bind_param($update_stmt, $types, ...$event_ids);
+            
+            if (mysqli_stmt_execute($update_stmt)) {
+                $deactivated_count = mysqli_stmt_affected_rows($update_stmt);
+                
+                // Log the deactivation for debugging
+                error_log("Auto-deactivated {$deactivated_count} past events: " . implode(', ', array_column($past_events, 'event_name')));
+                
+                // Set a global message to show in the UI (optional)
+                if ($deactivated_count > 0) {
+                    $GLOBALS['info_message'] = "Automatically deactivated {$deactivated_count} past event(s).";
+                }
+            } else {
+                error_log("Error executing past events update: " . mysqli_stmt_error($update_stmt));
+            }
+            
+            mysqli_stmt_close($update_stmt);
+        }
+        
+        return true;
+        
+    } catch (Exception $e) {
+        error_log("Error in deactivatePastEvents: " . $e->getMessage());
+        return false;
+    }
+}
+
+/**
+ * Advanced event status management
+ * Can be called independently for scheduled maintenance
+ */
+function manageEventStatuses() {
+    global $connection;
+    
+    try {
+        $current_datetime = date('Y-m-d H:i:s');
+        $current_date = date('Y-m-d');
+        
+        // Deactivate past events
+        $deactivated = deactivatePastEvents();
+        
+        // Optional: Reactivate events that were mistakenly deactivated but are still upcoming
+        $reactivate_sql = "SELECT event_id, event_name, event_date, event_time 
+                          FROM events 
+                          WHERE is_active = 0 
+                          AND (
+                              (event_date > ? AND event_time IS NOT NULL) 
+                              OR 
+                              (event_date > ? AND event_time IS NULL)
+                              OR 
+                              (event_date = ? AND event_time IS NOT NULL AND CONCAT(event_date, ' ', event_time, ':00') > ?)
+                          )";
+        
+        $stmt = mysqli_prepare($connection, $reactivate_sql);
+        if ($stmt) {
+            mysqli_stmt_bind_param($stmt, "ssss", $current_date, $current_date, $current_date, $current_datetime);
+            
+            if (mysqli_stmt_execute($stmt)) {
+                $result = mysqli_stmt_get_result($stmt);
+                $future_events = [];
+                
+                while ($event = mysqli_fetch_assoc($result)) {
+                    $future_events[] = $event;
+                }
+                
+                if (!empty($future_events)) {
+                    // Note: We're not auto-reactivating as this might be intentional
+                    // Just log for admin review
+                    error_log("Found " . count($future_events) . " inactive future events that might need review");
+                }
+            }
+            mysqli_stmt_close($stmt);
+        }
+        
+        return $deactivated;
+        
+    } catch (Exception $e) {
+        error_log("Error in manageEventStatuses: " . $e->getMessage());
         return false;
     }
 }

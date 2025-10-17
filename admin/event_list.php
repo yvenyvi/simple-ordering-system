@@ -204,6 +204,104 @@ require_once 'controller/event_list.php';
         </div>
     </div>
 
+    <!-- Edit Event Modal -->
+    <div class="modal fade" id="editEventModal" tabindex="-1">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header bg-warning text-dark">
+                    <h5 class="modal-title"><i class="fas fa-edit"></i> Edit Event</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="editEventForm">
+                        <input type="hidden" id="edit-event-id" name="event_id">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="edit-event-name">Event Name *</label>
+                                <input type="text" id="edit-event-name" name="event_name" class="form-control" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="edit-event-type">Event Type *</label>
+                                <select id="edit-event-type" name="event_type" class="form-select" required>
+                                    <option value="">Select Event Type</option>
+                                    <option value="workshop">Workshop</option>
+                                    <option value="tasting">Tasting</option>
+                                    <option value="party">Party</option>
+                                    <option value="cooking_class">Cooking Class</option>
+                                    <option value="special_dinner">Special Dinner</option>
+                                    <option value="other">Other</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="edit-event-date">Event Date *</label>
+                                <input type="date" id="edit-event-date" name="event_date" class="form-control" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="edit-event-time">Event Time *</label>
+                                <input type="time" id="edit-event-time" name="event_time" class="form-control" required>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="edit-event-description">Description</label>
+                            <textarea id="edit-event-description" name="description" class="form-control" rows="3" placeholder="Describe the event details, activities, and what attendees can expect..."></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="edit-event-location">Location *</label>
+                            <input type="text" id="edit-event-location" name="location" class="form-control" required placeholder="e.g., Main Restaurant, Private Dining Room, Outdoor Patio">
+                        </div>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="edit-event-capacity">Capacity *</label>
+                                <input type="number" id="edit-event-capacity" name="capacity" class="form-control" min="1" max="500" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="edit-event-price">Price *</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">$</span>
+                                    <input type="number" id="edit-event-price" name="price" class="form-control" step="0.01" min="0" required>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="edit-contact-email">Contact Email</label>
+                                <input type="email" id="edit-contact-email" name="contact_email" class="form-control" placeholder="events@deliciouseats.com">
+                            </div>
+                            <div class="form-group">
+                                <label for="edit-contact-phone">Contact Phone</label>
+                                <input type="tel" id="edit-contact-phone" name="contact_phone" class="form-control" placeholder="(555) 123-4567">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="edit-event-requirements">Special Requirements</label>
+                            <textarea id="edit-event-requirements" name="requirements" class="form-control" rows="2" placeholder="Age restrictions, dress code, dietary considerations, etc."></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="edit-fileField">Upload New Image (Optional)</label>
+                            <input type="file" id="edit-fileField" name="fileField" class="form-control" accept="image/*">
+                            <small class="form-text text-muted">Leave empty to keep current image. Supported formats: JPG, JPEG, PNG, GIF, WEBP.</small>
+                            <div id="current-image-preview" class="mt-2" style="display: none;">
+                                <label class="form-label">Current Image:</label>
+                                <img id="current-image" src="" alt="Current Event Image" class="img-thumbnail" style="max-height: 100px;">
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times"></i> Cancel
+                    </button>
+                    <button type="button" class="btn btn-danger" id="disableEventBtn" onclick="disableEventFromModal()">
+                        <i class="fas fa-ban"></i> <span id="disableEventText">Disable Event</span>
+                    </button>
+                    <button type="button" class="btn btn-warning" id="saveEventChanges">
+                        <i class="fas fa-save"></i> Save Changes
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <!-- Existing Admin JS -->

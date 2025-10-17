@@ -75,6 +75,80 @@ function showEventInfoMessage(infoMessage) {
 }
 
 /**
+ * Edit event function
+ */
+function editEvent(eventId) {
+    fetch('controller/event_list.php?action=get_event_for_edit&event_id=' + eventId, {
+        method: 'GET'
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success && data.event) {
+            const event = data.event;
+            
+            // Populate form fields
+            document.getElementById('edit-event-id').value = event.event_id;
+            document.getElementById('edit-event-name').value = event.event_name || '';
+            document.getElementById('edit-event-type').value = event.event_type || '';
+            document.getElementById('edit-event-date').value = event.event_date || '';
+            document.getElementById('edit-event-time').value = event.event_time || '';
+            document.getElementById('edit-event-description').value = event.description || '';
+            document.getElementById('edit-event-location').value = event.location || '';
+            document.getElementById('edit-event-capacity').value = event.capacity || '50';
+            document.getElementById('edit-event-price').value = event.price || '0.00';
+            document.getElementById('edit-contact-email').value = event.contact_email || '';
+            document.getElementById('edit-contact-phone').value = event.contact_phone || '';
+            document.getElementById('edit-event-requirements').value = event.requirements || '';
+            
+            // Update disable button text based on current status
+            const disableBtn = document.getElementById('disableEventBtn');
+            const disableText = document.getElementById('disableEventText');
+            if (event.is_active == 1) {
+                disableText.textContent = 'Disable Event';
+                disableBtn.className = 'btn btn-danger';
+                disableBtn.innerHTML = '<i class="fas fa-ban"></i> <span id="disableEventText">Disable Event</span>';
+            } else {
+                disableText.textContent = 'Enable Event';
+                disableBtn.className = 'btn btn-success';
+                disableBtn.innerHTML = '<i class="fas fa-check"></i> <span id="disableEventText">Enable Event</span>';
+            }
+            
+            // Show current image if exists
+            const imagePreview = document.getElementById('current-image-preview');
+            const currentImage = document.getElementById('current-image');
+            if (event.image_url) {
+                currentImage.src = event.image_url;
+                imagePreview.style.display = 'block';
+            } else {
+                imagePreview.style.display = 'none';
+            }
+            
+            // Set minimum date to today for date validation
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('edit-event-date').min = today;
+            
+            // Show modal
+            const modal = new bootstrap.Modal(document.getElementById('editEventModal'));
+            modal.show();
+        } else {
+            if (typeof showBootstrapAlert === 'function') {
+                showBootstrapAlert('Error loading event for editing: ' + (data.message || 'Unknown error'), 'error', 5000);
+            } else {
+                alert('Error loading event for editing');
+            }
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        if (typeof showBootstrapAlert === 'function') {
+            showBootstrapAlert('Error loading event for editing', 'error', 5000);
+        } else {
+            alert('Error loading event for editing');
+        }
+    });
+}
+
+/**
  * View event details in modal
  */
 function viewEventDetails(eventId) {
@@ -389,4 +463,170 @@ function updateEventResultsCount(visible, total) {
         countDisplay.innerHTML = `<i class="fas fa-filter"></i> Showing ${visible} of ${total} events`;
         countDisplay.className = 'results-count text-primary fw-bold';
     }
+}
+
+/**
+ * Save event changes functionality
+ */
+document.addEventListener('DOMContentLoaded', function() {
+    const saveButton = document.getElementById('saveEventChanges');
+    if (saveButton) {
+        saveButton.addEventListener('click', function() {
+            const formData = new FormData();
+            
+            // Manually collect all form data to ensure proper handling
+            formData.append('action', 'update_event');
+            formData.append('event_id', document.getElementById('edit-event-id').value);
+            formData.append('event_name', document.getElementById('edit-event-name').value);
+            formData.append('event_type', document.getElementById('edit-event-type').value);
+            formData.append('event_date', document.getElementById('edit-event-date').value);
+            formData.append('event_time', document.getElementById('edit-event-time').value);
+            formData.append('description', document.getElementById('edit-event-description').value);
+            formData.append('location', document.getElementById('edit-event-location').value);
+            formData.append('capacity', document.getElementById('edit-event-capacity').value);
+            formData.append('price', document.getElementById('edit-event-price').value);
+            formData.append('contact_email', document.getElementById('edit-contact-email').value);
+            formData.append('contact_phone', document.getElementById('edit-contact-phone').value);
+            formData.append('requirements', document.getElementById('edit-event-requirements').value);
+            
+            // Add file field if there's a file selected
+            const fileField = document.getElementById('edit-fileField');
+            if (fileField.files.length > 0) {
+                formData.append('fileField', fileField.files[0]);
+            }
+            
+            // Convert checkbox to proper value
+            formData.append('is_active', document.getElementById('edit-event-active').checked ? '1' : '0');
+            
+            // Validate required fields
+            const eventName = document.getElementById('edit-event-name').value.trim();
+            const eventDate = document.getElementById('edit-event-date').value;
+            const eventTime = document.getElementById('edit-event-time').value;
+            const location = document.getElementById('edit-event-location').value.trim();
+            const capacity = document.getElementById('edit-event-capacity').value;
+            const price = document.getElementById('edit-event-price').value;
+            const eventType = document.getElementById('edit-event-type').value;
+            
+            if (!eventName || !eventDate || !eventTime || !location || !capacity || !price || !eventType) {
+                if (typeof showBootstrapAlert === 'function') {
+                    showBootstrapAlert('Please fill in all required fields', 'error', 5000);
+                } else {
+                    alert('Please fill in all required fields');
+                }
+                return;
+            }
+            
+            // Validate date is not in the past
+            const selectedDate = new Date(eventDate);
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            selectedDate.setHours(0, 0, 0, 0);
+            
+            if (selectedDate < today) {
+                if (typeof showBootstrapAlert === 'function') {
+                    showBootstrapAlert('Event date cannot be in the past', 'error', 5000);
+                } else {
+                    alert('Event date cannot be in the past');
+                }
+                return;
+            }
+            
+            fetch('controller/event_list.php', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('editEventModal'));
+                    modal.hide();
+                    
+                    if (typeof showBootstrapAlert === 'function') {
+                        showBootstrapAlert(data.message || 'Event updated successfully!', 'success', 4000);
+                    }
+                    
+                    // Reload the page to show updated data
+                    window.location.reload();
+                } else {
+                    if (typeof showBootstrapAlert === 'function') {
+                        showBootstrapAlert(data.message || 'Error updating event', 'error', 5000);
+                    } else {
+                        alert(data.message || 'Error updating event');
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                if (typeof showBootstrapAlert === 'function') {
+                    showBootstrapAlert('Error updating event', 'error', 5000);
+                } else {
+                    alert('Error updating event');
+                }
+            });
+        });
+    }
+});
+
+/**
+ * Toggle event active status
+ */
+function toggleEventStatus(eventId, currentStatus) {
+    const formData = new FormData();
+    formData.append('action', 'toggle');
+    formData.append('id', eventId);
+    
+    fetch('controller/event_list.php', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            if (typeof showBootstrapAlert === 'function') {
+                showBootstrapAlert(data.message || 'Event status updated successfully!', 'success', 4000);
+            } else {
+                alert(data.message || 'Event status updated successfully!');
+            }
+            
+            // Reload the page to show updated data
+            window.location.reload();
+        } else {
+            if (typeof showBootstrapAlert === 'function') {
+                showBootstrapAlert(data.message || 'Error updating event status', 'error', 5000);
+            } else {
+                alert(data.message || 'Error updating event status');
+            }
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        if (typeof showBootstrapAlert === 'function') {
+            showBootstrapAlert('Error updating event status', 'error', 5000);
+        } else {
+            alert('Error updating event status');
+        }
+    });
+}
+
+/**
+ * Disable/Enable event from modal
+ */
+function disableEventFromModal() {
+    const eventId = document.getElementById('edit-event-id').value;
+    const disableBtn = document.getElementById('disableEventBtn');
+    
+    // Determine current status from button text
+    const currentStatus = disableBtn.innerHTML.includes('Disable Event') ? 1 : 0;
+    
+    if (!eventId) {
+        if (typeof showBootstrapAlert === 'function') {
+            showBootstrapAlert('No event selected', 'error', 5000);
+        } else {
+            alert('No event selected');
+        }
+        return;
+    }
+    
+    // Call the existing toggle function
+    toggleEventStatus(eventId, currentStatus);
 }

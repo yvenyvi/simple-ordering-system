@@ -36,7 +36,7 @@ class TableConfig {
             'name_fields' => ['event_name', 'title', 'name'],
             'image_directory' => 'events',
             'icon' => 'fas fa-calendar-alt',
-            'actions' => ['view', 'edit', 'delete'],
+            'actions' => ['view', 'edit', 'toggle', 'delete'],
             'admin_page' => 'event_list.php',
             'title' => 'Events',
             'order_by' => 'event_date DESC',

@@ -6,16 +6,22 @@
 
 require_once __DIR__ . "/../../models/db_Model.php";
 
-// Automatically deactivate past events on every page load
-deactivatePastEvents();
-
 // Route requests to appropriate handlers
 if (isset($_GET['action']) && $_GET['action'] === 'view' && isset($_GET['id'])) {
     handleViewEvent();
+} elseif (isset($_GET['action']) && $_GET['action'] === 'get_event_for_edit' && isset($_GET['event_id'])) {
+    handleGetEventForEdit();
+} elseif (isset($_POST['action']) && $_POST['action'] === 'update_event') {
+    handleUpdateEvent();
+} elseif (isset($_POST['action']) && $_POST['action'] === 'toggle' && isset($_POST['id'])) {
+    handleToggleEvent();
 } elseif (isset($_GET['deleteid'])) {
     handleDeleteEvent();
 } elseif (isset($_POST['event_name'])) {
     handleCreateEvent();
+} else {
+    // Only run auto-deactivation on regular page loads (not AJAX requests)
+    deactivatePastEvents();
 }
 
 /**
@@ -63,6 +69,108 @@ function handleViewEvent() {
     } catch (Exception $e) {
         error_log("Error in handleViewEvent: " . $e->getMessage());
         echo json_encode(['success' => false, 'message' => 'Failed to load event details']);
+    }
+    
+    exit;
+}
+
+/**
+ * Handle AJAX request to get event data for editing
+ */
+function handleGetEventForEdit() {
+    header('Content-Type: application/json');
+    
+    $event_id = intval($_GET['event_id']);
+    
+    if ($event_id <= 0) {
+        echo json_encode(['success' => false, 'message' => 'Invalid event ID']);
+        exit;
+    }
+    
+    global $connection;
+    
+    try {
+        // Fetch complete event details for editing
+        $sql = "SELECT * FROM events WHERE event_id = ?";
+        
+        $stmt = mysqli_prepare($connection, $sql);
+        if (!$stmt) {
+            throw new Exception('Database prepare error: ' . mysqli_error($connection));
+        }
+        
+        mysqli_stmt_bind_param($stmt, "i", $event_id);
+        
+        if (!mysqli_stmt_execute($stmt)) {
+            throw new Exception('Database execute error: ' . mysqli_stmt_error($stmt));
+        }
+        
+        $result = mysqli_stmt_get_result($stmt);
+        
+        if ($event = mysqli_fetch_assoc($result)) {
+            echo json_encode(['success' => true, 'event' => $event]);
+        } else {
+            echo json_encode(['success' => false, 'message' => 'Event not found']);
+        }
+        
+        mysqli_stmt_close($stmt);
+        
+    } catch (Exception $e) {
+        error_log("Error in handleGetEventForEdit: " . $e->getMessage());
+        echo json_encode(['success' => false, 'message' => 'Failed to load event data']);
+    }
+    
+    exit;
+}
+
+/**
+ * Handle event update request
+ */
+function handleUpdateEvent() {
+    header('Content-Type: application/json');
+    
+    // Validate input data
+    $validation_result = validateEventData($_POST);
+    
+    if (!$validation_result['valid']) {
+        echo json_encode([
+            'success' => false, 
+            'message' => 'Validation errors: ' . implode(', ', $validation_result['errors'])
+        ]);
+        exit;
+    }
+    
+    $event_id = intval($_POST['event_id']);
+    if ($event_id <= 0) {
+        echo json_encode(['success' => false, 'message' => 'Invalid event ID']);
+        exit;
+    }
+    
+    // Check for duplicate event (excluding current event)
+    if (isDuplicateEventForUpdate($_POST['event_name'], $_POST['event_date'], $event_id)) {
+        echo json_encode(['success' => false, 'message' => 'An event with this name already exists on the selected date']);
+        exit;
+    }
+    
+    // Prepare event data
+    $event_data = prepareEventData($_POST);
+    
+    // Update event in database
+    $update_result = updateEvent($event_id, $event_data);
+    
+    if ($update_result['success']) {
+        // Handle image upload if present
+        $image_uploaded = false;
+        if (isset($_FILES['fileField']) && $_FILES['fileField']['tmp_name']) {
+            $image_uploaded = handleEventImageUpload($event_id);
+        }
+        
+        $message_suffix = $image_uploaded ? ' with new image!' : '!';
+        echo json_encode([
+            'success' => true, 
+            'message' => "Event '{$event_data['event_name']}' has been successfully updated{$message_suffix}"
+        ]);
+    } else {
+        echo json_encode(['success' => false, 'message' => $update_result['message']]);
     }
     
     exit;
@@ -405,6 +513,198 @@ function manageEventStatuses() {
         error_log("Error in manageEventStatuses: " . $e->getMessage());
         return false;
     }
+}
+
+/**
+ * Check if event with same name and date already exists (excluding current event for updates)
+ * 
+ * @param string $event_name
+ * @param string $event_date
+ * @param int $exclude_event_id Event ID to exclude from check
+ * @return bool
+ */
+function isDuplicateEventForUpdate($event_name, $event_date, $exclude_event_id) {
+    global $connection;
+    
+    $sql = "SELECT COUNT(*) as count FROM events WHERE event_name = ? AND event_date = ? AND event_id != ?";
+    $stmt = mysqli_prepare($connection, $sql);
+    mysqli_stmt_bind_param($stmt, "ssi", $event_name, $event_date, $exclude_event_id);
+    mysqli_stmt_execute($stmt);
+    $result = mysqli_stmt_get_result($stmt);
+    $row = mysqli_fetch_assoc($result);
+    mysqli_stmt_close($stmt);
+    
+    return $row['count'] > 0;
+}
+
+/**
+ * Update event in database
+ * 
+ * @param int $event_id
+ * @param array $event_data
+ * @return array Result with success status and message
+ */
+function updateEvent($event_id, $event_data) {
+    global $connection;
+    
+    try {
+        // Start transaction to ensure data consistency
+        mysqli_autocommit($connection, false);
+        $sql = "UPDATE events SET 
+                event_name = ?, 
+                description = ?, 
+                event_date = ?, 
+                event_time = ?, 
+                location = ?, 
+                capacity = ?, 
+                price = ?, 
+                event_type = ?, 
+                contact_email = ?, 
+                contact_phone = ?, 
+                requirements = ?, 
+                is_active = ?,
+                updated_at = CURRENT_TIMESTAMP
+                WHERE event_id = ?";
+        
+        $stmt = mysqli_prepare($connection, $sql);
+        if (!$stmt) {
+            throw new Exception('Failed to prepare update statement: ' . mysqli_error($connection));
+        }
+        
+        mysqli_stmt_bind_param($stmt, "sssssidsssiii", 
+            $event_data['event_name'],
+            $event_data['description'],
+            $event_data['event_date'],
+            $event_data['event_time'],
+            $event_data['location'],
+            $event_data['capacity'],
+            $event_data['price'],
+            $event_data['event_type'],
+            $event_data['contact_email'],
+            $event_data['contact_phone'],
+            $event_data['requirements'],
+            $event_data['is_active'],
+            $event_id
+        );
+        
+        if (!mysqli_stmt_execute($stmt)) {
+            throw new Exception('Failed to execute update: ' . mysqli_stmt_error($stmt));
+        }
+        
+        $affected_rows = mysqli_stmt_affected_rows($stmt);
+        mysqli_stmt_close($stmt);
+        
+        if ($affected_rows > 0) {
+            // Commit the transaction
+            mysqli_commit($connection);
+            mysqli_autocommit($connection, true);
+            return ['success' => true, 'message' => 'Event updated successfully'];
+        } else {
+            // Rollback the transaction
+            mysqli_rollback($connection);
+            mysqli_autocommit($connection, true);
+            return ['success' => false, 'message' => 'No changes were made or event not found'];
+        }
+        
+    } catch (Exception $e) {
+        // Rollback the transaction on error
+        mysqli_rollback($connection);
+        mysqli_autocommit($connection, true);
+        error_log("Error updating event: " . $e->getMessage());
+        return ['success' => false, 'message' => 'Failed to update event: ' . $e->getMessage()];
+    }
+}
+
+/**
+ * Handle toggle event active status
+ */
+function handleToggleEvent() {
+    header('Content-Type: application/json');
+    
+    if (!isset($_POST['id'])) {
+        echo json_encode(['success' => false, 'message' => 'No event ID provided']);
+        exit;
+    }
+    
+    $event_id = intval($_POST['id']);
+    
+    if ($event_id <= 0) {
+        echo json_encode(['success' => false, 'message' => 'Invalid event ID']);
+        exit;
+    }
+    
+    global $connection;
+    
+    try {
+        // Start transaction
+        mysqli_autocommit($connection, false);
+        
+        // Get current status
+        $get_sql = "SELECT is_active FROM events WHERE event_id = ?";
+        $get_stmt = mysqli_prepare($connection, $get_sql);
+        
+        if (!$get_stmt) {
+            throw new Exception('Database prepare error: ' . mysqli_error($connection));
+        }
+        
+        mysqli_stmt_bind_param($get_stmt, "i", $event_id);
+        
+        if (!mysqli_stmt_execute($get_stmt)) {
+            throw new Exception('Failed to get current status: ' . mysqli_stmt_error($get_stmt));
+        }
+        
+        $result = mysqli_stmt_get_result($get_stmt);
+        $row = mysqli_fetch_assoc($result);
+        mysqli_stmt_close($get_stmt);
+        
+        if (!$row) {
+            throw new Exception('Event not found');
+        }
+        
+        // Toggle the status
+        $new_status = $row['is_active'] ? 0 : 1;
+        
+        // Update the status
+        $update_sql = "UPDATE events SET is_active = ?, updated_at = CURRENT_TIMESTAMP WHERE event_id = ?";
+        $update_stmt = mysqli_prepare($connection, $update_sql);
+        
+        if (!$update_stmt) {
+            throw new Exception('Database prepare error: ' . mysqli_error($connection));
+        }
+        
+        mysqli_stmt_bind_param($update_stmt, "ii", $new_status, $event_id);
+        
+        if (!mysqli_stmt_execute($update_stmt)) {
+            throw new Exception('Failed to update status: ' . mysqli_stmt_error($update_stmt));
+        }
+        
+        $affected_rows = mysqli_stmt_affected_rows($update_stmt);
+        mysqli_stmt_close($update_stmt);
+        
+        if ($affected_rows > 0) {
+            mysqli_commit($connection);
+            mysqli_autocommit($connection, true);
+            
+            $status_text = $new_status ? 'activated' : 'deactivated';
+            echo json_encode([
+                'success' => true, 
+                'message' => "Event {$status_text} successfully",
+                'new_status' => $new_status
+            ]);
+        } else {
+            mysqli_rollback($connection);
+            mysqli_autocommit($connection, true);
+            echo json_encode(['success' => false, 'message' => 'Failed to update event status']);
+        }
+        
+    } catch (Exception $e) {
+        mysqli_rollback($connection);
+        mysqli_autocommit($connection, true);
+        error_log("Error toggling event status: " . $e->getMessage());
+        echo json_encode(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
+    }
+    
+    exit;
 }
 
 ?>

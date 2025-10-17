@@ -512,6 +512,8 @@ function renderActionButtons($row, $table_name, $config) {
             $html .= '<a href="#" class="btn-action btn-edit" onclick="editMenuItem(' . intval($id) . '); return false;" title="Edit Item">';
         } elseif ($table_name === 'users') {
             $html .= '<a href="#" class="btn-action btn-edit" onclick="editUser(' . intval($id) . '); return false;" title="Edit User">';
+        } elseif ($table_name === 'events') {
+            $html .= '<a href="#" class="btn-action btn-edit" onclick="editEvent(' . intval($id) . '); return false;" title="Edit Event">';
         } else {
             $html .= '<a href="#" class="btn-action btn-edit" onclick="editItem(' . intval($id) . '); return false;" title="Edit">';
         }
@@ -527,6 +529,18 @@ function renderActionButtons($row, $table_name, $config) {
         $toggle_icon = $is_available ? 'fas fa-toggle-on' : 'fas fa-toggle-off';
         
         $html .= '<a href="#" class="btn-action ' . $toggle_class . '" onclick="toggleAvailability(' . intval($id) . ', ' . intval($is_available) . '); return false;" title="' . $toggle_title . '">';
+        $html .= '<i class="' . $toggle_icon . '"></i>';
+        $html .= '</a>';
+    }
+    
+    // Toggle active status button (for events)
+    if (in_array('toggle', $actions) && $table_name === 'events') {
+        $is_active = $row['is_active'] ?? 0;
+        $toggle_class = $is_active ? 'btn-toggle-on' : 'btn-toggle-off';
+        $toggle_title = $is_active ? 'Deactivate Event' : 'Activate Event';
+        $toggle_icon = $is_active ? 'fas fa-toggle-on' : 'fas fa-toggle-off';
+        
+        $html .= '<a href="#" class="btn-action ' . $toggle_class . '" onclick="toggleEventStatus(' . intval($id) . ', ' . intval($is_active) . '); return false;" title="' . $toggle_title . '">';
         $html .= '<i class="' . $toggle_icon . '"></i>';
         $html .= '</a>';
     }

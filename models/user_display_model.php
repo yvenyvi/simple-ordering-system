@@ -1,4 +1,20 @@
 <?php
+
+/**
+ * User Display Model
+ * Handles user-facing display functions for products, menus, and frontend components
+ * Focused on customer-facing functionality and product presentation
+ */
+
+/**
+ * =============================================================================
+ * PRODUCT DISPLAY FUNCTIONS
+ * =============================================================================
+ */
+
+/**
+ * Display product cards from SQL query
+ */
 function display_product_cards($sql) {
     global $connection;
     $result = mysqli_query($connection, $sql);
@@ -28,6 +44,9 @@ function display_product_cards($sql) {
     }
 }
 
+/**
+ * Display menu items with filtering and sorting options
+ */
 function display_menu_items($category = null, $limit = null, $order_by = 'name ASC') {
     global $connection;
     
@@ -47,16 +66,29 @@ function display_menu_items($category = null, $limit = null, $order_by = 'name A
     display_product_cards($sql);
 }
 
+/**
+ * =============================================================================
+ * CONVENIENCE FUNCTIONS FOR COMMON USE CASES
+ * =============================================================================
+ */
 
-// Convenience functions for common use cases
+/**
+ * Display featured products (recent items)
+ */
 function display_featured_products($limit = 4) {
     display_menu_items(null, $limit, 'created_at DESC');
 }
 
+/**
+ * Display menu products with optional category filter
+ */
 function display_menu_products($category = null) {
     display_menu_items($category);
 }
 
+/**
+ * Display products by specific category
+ */
 function display_products_by_category($category) {
     display_menu_items($category);
 }

@@ -1,13 +1,15 @@
 <?php
 
 /**
- * Centralized Table Configuration Class
- * Consolidates all table-specific configurations to follow DRY principle
+ * Table Configuration Class
+ * Centralized configuration for all database tables following DRY principles
+ * Provides consistent table metadata, actions, and display configurations
  */
 class TableConfig {
     
     /**
-     * Table configuration mappings
+     * Centralized table configuration mappings
+     * All table-specific settings are defined here for consistency
      */
     private static $config = [
         'users' => [

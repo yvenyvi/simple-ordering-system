@@ -154,20 +154,27 @@ function handleUpdateEvent() {
     // Prepare event data
     $event_data = prepareEventData($_POST);
     
-    // Update event in database
-    $update_result = updateEvent($event_id, $event_data);
+    // Create custom validator for events
+    $validator = function($data, $id, $table) use ($event_data) {
+        // Check for duplicate event (excluding current event)
+        if (isDuplicateEventForUpdate($data['event_name'], $data['event_date'], $id)) {
+            return ['valid' => false, 'message' => 'An event with this name already exists on the selected date'];
+        }
+        return ['valid' => true];
+    };
+    
+    // Update event using unified update function
+    $update_result = update('events', $event_data, $event_id, ['validator' => $validator]);
     
     if ($update_result['success']) {
-        // Handle image upload if present
-        $image_uploaded = false;
+        $image_suffix = '';
         if (isset($_FILES['fileField']) && $_FILES['fileField']['tmp_name']) {
-            $image_uploaded = handleEventImageUpload($event_id);
+            $image_suffix = ' with new image';
         }
         
-        $message_suffix = $image_uploaded ? ' with new image!' : '!';
         echo json_encode([
             'success' => true, 
-            'message' => "Event '{$event_data['event_name']}' has been successfully updated{$message_suffix}"
+            'message' => "Event '{$event_data['event_name']}' has been successfully updated{$image_suffix}!"
         ]);
     } else {
         echo json_encode(['success' => false, 'message' => $update_result['message']]);

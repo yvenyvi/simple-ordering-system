@@ -2,9 +2,16 @@
 
 /**
  * HTML Generator Class
- * Eliminates repetitive HTML string building and provides reusable UI components
+ * Provides reusable UI components and eliminates repetitive HTML generation
+ * Follows DRY principles for consistent admin interface elements
  */
 class HtmlGenerator {
+
+    /**
+     * =============================================================================
+     * STATISTICS AND DASHBOARD COMPONENTS
+     * =============================================================================
+     */
 
     /**
      * Generate statistics card HTML
@@ -25,6 +32,12 @@ class HtmlGenerator {
         
         return $html;
     }
+
+    /**
+     * =============================================================================
+     * ACTION BUTTONS AND INTERACTIVE ELEMENTS
+     * =============================================================================
+     */
 
     /**
      * Generate action button HTML

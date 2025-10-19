@@ -141,58 +141,29 @@ if (isset($_POST['action']) && $_POST['action'] === 'edit' && isset($_POST['edit
     mysqli_stmt_close($stmt);
     
     if (empty($errors)) {
-        // Prepare update data
-        $first_name = trim($_POST['first_name']);
-        $last_name = trim($_POST['last_name']);
-        $email = trim($_POST['email']);
-        $phone = trim($_POST['phone']);
-        $address = trim($_POST['address']);
-        $city = trim($_POST['city']);
-        $state = trim($_POST['state']);
-        $zip_code = trim($_POST['zip_code']);
-        $is_active = isset($_POST['is_active']) ? 1 : 0;
+        // Prepare user data
+        $user_data = [
+            'first_name' => trim($_POST['first_name']),
+            'last_name' => trim($_POST['last_name']),
+            'email' => trim($_POST['email']),
+            'phone' => trim($_POST['phone']),
+            'address' => trim($_POST['address']),
+            'city' => trim($_POST['city']),
+            'state' => trim($_POST['state']),
+            'zip_code' => trim($_POST['zip_code']),
+            'is_active' => isset($_POST['is_active']) ? 1 : 0
+        ];
         
-        $sql = "UPDATE users SET 
-                first_name = ?, 
-                last_name = ?, 
-                email = ?, 
-                phone = ?, 
-                address = ?, 
-                city = ?, 
-                state = ?, 
-                zip_code = ?, 
-                is_active = ?,
-                updated_at = CURRENT_TIMESTAMP
-                WHERE user_id = ?";
+        // Update user using unified update function
+        $update_result = update('users', $user_data, $user_id);
         
-        $stmt = mysqli_prepare($connection, $sql);
-        if (!$stmt) {
-            $error_message = "Database prepare error: " . mysqli_error($connection);
-            redirect_to("../user_list.php?error=" . urlencode($error_message));
-        }
-        
-        mysqli_stmt_bind_param($stmt, "ssssssssii", 
-            $first_name,
-            $last_name,
-            $email,
-            $phone,
-            $address,
-            $city,
-            $state,
-            $zip_code,
-            $is_active,
-            $user_id
-        );
-        
-        if (mysqli_stmt_execute($stmt)) {
-            $success_message = "User '{$first_name} {$last_name}' has been successfully updated!";
+        if ($update_result['success']) {
+            $success_message = "User '{$user_data['first_name']} {$user_data['last_name']}' has been successfully updated!";
             redirect_to("../user_list.php?success=" . urlencode($success_message));
         } else {
-            $error_message = "Failed to update user: " . mysqli_stmt_error($stmt);
+            $error_message = "Failed to update user: " . $update_result['message'];
             redirect_to("../user_list.php?error=" . urlencode($error_message));
         }
-        
-        mysqli_stmt_close($stmt);
     } else {
         $error_message = "Please fix the following errors: " . implode(", ", $errors);
         redirect_to("../user_list.php?error=" . urlencode($error_message));

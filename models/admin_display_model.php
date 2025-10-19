@@ -1,5 +1,20 @@
 <?php
 
+/**
+ * Admin Display Model
+ * Handles admin-specific display functions, table rendering, and audit logging
+ * Provides comprehensive backend functionality for administrative interface
+ */
+
+/**
+ * =============================================================================
+ * MAIN ADMIN TABLE DISPLAY FUNCTIONS
+ * =============================================================================
+ */
+
+/**
+ * Display admin table with full configuration support
+ */
 function display_admin_table($table_name, $sql = null, $options = array()) {
     global $connection;
     

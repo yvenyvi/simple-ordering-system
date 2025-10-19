@@ -219,87 +219,66 @@ function handleUpdateMenu() {
         
         $menu_id = intval($_POST['menu_id']);
         
-        // Validate input data
-        $errors = [];
+        // Prepare menu data
+        $menu_data = [
+            'name' => trim($_POST['name']),
+            'description' => trim($_POST['description']),  
+            'category' => trim($_POST['category']),
+            'price' => floatval($_POST['price']),
+            'ingredients' => trim($_POST['ingredients']),
+            'nutritional_info' => trim($_POST['nutritional_info']),
+            'preparation_time' => intval($_POST['preparation_time']),
+            'is_available' => isset($_POST['is_available']) ? 1 : 0
+        ];
         
-        if (empty(trim($_POST['name']))) {
-            $errors[] = "Menu item name is required";
-        }
-        if (empty(trim($_POST['category']))) {
-            $errors[] = "Category is required";
-        }
-        if (empty($_POST['price']) || !is_numeric($_POST['price']) || floatval($_POST['price']) <= 0) {
-            $errors[] = "Valid price is required";
-        }
+        // Create custom validator for menu items
+        $validator = function($data, $id, $table) use ($connection) {
+            $errors = [];
+            
+            if (empty($data['name'])) {
+                $errors[] = "Menu item name is required";
+            }
+            if (empty($data['category'])) {
+                $errors[] = "Category is required";
+            }
+            if (empty($data['price']) || $data['price'] <= 0) {
+                $errors[] = "Valid price is required";
+            }
+            
+            // Check for duplicate name (excluding current item)
+            $name_check_sql = "SELECT COUNT(*) as count FROM menu WHERE name = ? AND menu_id != ?";
+            $stmt = mysqli_prepare($connection, $name_check_sql);
+            mysqli_stmt_bind_param($stmt, "si", $data['name'], $id);
+            mysqli_stmt_execute($stmt);
+            $result = mysqli_stmt_get_result($stmt);
+            $row = mysqli_fetch_assoc($result);
+            mysqli_stmt_close($stmt);
+            
+            if ($row['count'] > 0) {
+                $errors[] = "Menu item with this name already exists";
+            }
+            
+            if (!empty($errors)) {
+                return ['valid' => false, 'message' => implode(', ', $errors)];
+            }
+            
+            return ['valid' => true];
+        };
         
-        // Check if menu item name already exists (excluding current item)
-        $name_check_sql = "SELECT COUNT(*) as count FROM menu WHERE name = ? AND menu_id != ?";
-        $stmt = mysqli_prepare($connection, $name_check_sql);
-        mysqli_stmt_bind_param($stmt, "si", $_POST['name'], $menu_id);
-        mysqli_stmt_execute($stmt);
-        $result = mysqli_stmt_get_result($stmt);
-        $row = mysqli_fetch_assoc($result);
+        // Update menu item using unified update function
+        $update_result = update('menu', $menu_data, $menu_id, ['validator' => $validator]);
         
-        if ($row['count'] > 0) {
-            $errors[] = "Menu item with this name already exists";
-        }
-        mysqli_stmt_close($stmt);
-        
-        if (!empty($errors)) {
+        if ($update_result['success']) {
+            echo json_encode([
+                'success' => true,
+                'message' => "Menu item '{$menu_data['name']}' updated successfully"
+            ]);
+        } else {
             echo json_encode([
                 'success' => false,
-                'message' => 'Validation errors: ' . implode(', ', $errors)
+                'message' => $update_result['message']
             ]);
-            return;
         }
-        
-        // Update menu item
-        $update_query = "UPDATE menu SET 
-                            name = ?, 
-                            description = ?, 
-                            category = ?, 
-                            price = ?, 
-                            ingredients = ?, 
-                            nutritional_info = ?, 
-                            preparation_time = ?, 
-                            is_available = ?,
-                            updated_at = NOW()
-                         WHERE menu_id = ?";
-        
-        $stmt = mysqli_prepare($connection, $update_query);
-        if (!$stmt) {
-            throw new Exception("Failed to prepare update query: " . mysqli_error($connection));
-        }
-        
-        $name = trim($_POST['name']);
-        $description = trim($_POST['description']);
-        $category = trim($_POST['category']);
-        $price = floatval($_POST['price']);
-        $ingredients = trim($_POST['ingredients']);
-        $nutritional_info = trim($_POST['nutritional_info']);
-        $preparation_time = intval($_POST['preparation_time']);
-        $is_available = isset($_POST['is_available']) ? 1 : 0;
-        
-        mysqli_stmt_bind_param($stmt, "sssdsssii", 
-            $name, $description, $category, $price, $ingredients, 
-            $nutritional_info, $preparation_time, $is_available, $menu_id);
-        
-        $result = mysqli_stmt_execute($stmt);
-        
-        if (!$result) {
-            throw new Exception('Database update failed');
-        }
-        
-        if (mysqli_stmt_affected_rows($stmt) === 0) {
-            echo json_encode(['success' => false, 'message' => 'No changes made or menu item not found']);
-            return;
-        }
-        mysqli_stmt_close($stmt);
-        
-        echo json_encode([
-            'success' => true,
-            'message' => "Menu item '{$name}' updated successfully"
-        ]);
         
     } catch (Exception $e) {
         error_log("Error in handleUpdateMenu: " . $e->getMessage());

@@ -1,9 +1,16 @@
 <?php
+/**
+ * Database Model - Core Database Operations
+ * Handles database connection, basic CRUD operations, and utility functions
+ */
+
+// Database Configuration
 define("DB_SERVER", "localhost");
 define("DB_USER", "root");
 define("DB_PASS", "password");
 define("DB_NAME", "delicious_eats");
 
+// Establish Database Connection
 $connection = mysqli_connect(DB_SERVER, DB_USER, DB_PASS, DB_NAME);
 if (mysqli_connect_errno()) {
     die("Database connection failed: " .
@@ -12,30 +19,46 @@ if (mysqli_connect_errno()) {
     );
 }
 
-// Initialize helper classes with database connection
-require_once dirname(__FILE__) . '/QueryHelper.php';
+// Load Dependencies
 require_once dirname(__FILE__) . '/TableConfig.php';
 require_once dirname(__FILE__) . '/HtmlGenerator.php';
+require_once dirname(__FILE__) . '/admin_display_model.php';
 
-QueryHelper::init($connection);
+/**
+ * =============================================================================
+ * UTILITY FUNCTIONS
+ * =============================================================================
+ */
 
+/**
+ * Redirect to new location
+ */
 function redirect_to($new_location) {
-    header("Location: ".$new_location);
+    header("Location: " . $new_location);
     exit();
 }
 
-function confirm_query($result_set){
-    if(!$result_set){
+/**
+ * Confirm query result
+ */
+function confirm_query($result_set) {
+    if (!$result_set) {
         die("Database query failed!");
     }
 }
 
-function save($table, $data){
+/**
+ * =============================================================================
+ * CORE DATABASE OPERATIONS
+ * =============================================================================
+ */
+
+/**
+ * Save data to database (INSERT operation)
+ * Note: UPDATE functionality has been temporarily disabled
+ */
+function save($table, $data) {
     global $connection;
-    
-    // NOTE: UPDATE functionality has been temporarily disabled
-    // This function now only supports INSERT operations
-    // UPDATE functionality coming soon...
     
     // Escape all data values
     $escaped_data = array();
@@ -70,38 +93,243 @@ function save($table, $data){
     $result = mysqli_query($connection, $sql_query) or die(mysqli_error($connection));
     $new_id = mysqli_insert_id($connection);
         
-        if(isset($_FILES['fileField']) && $_FILES['fileField']['tmp_name']) {
-            $newname = "$new_id.jpg";
-            
-            $upload_dir = get_upload_directory($table);
-            $upload_path = $upload_dir . $newname;
-            
-            if (!file_exists($upload_dir)) {
-                mkdir($upload_dir, 0777, true);
-            }
-            
-            move_uploaded_file($_FILES['fileField']['tmp_name'], $upload_path);
+    // Handle file upload if present
+    if (isset($_FILES['fileField']) && $_FILES['fileField']['tmp_name']) {
+        $newname = "$new_id.jpg";
+        
+        $upload_dir = get_upload_directory($table);
+        $upload_path = $upload_dir . $newname;
+        
+        if (!file_exists($upload_dir)) {
+            mkdir($upload_dir, 0777, true);
         }
         
-        confirm_query($result);
-        return $new_id;
+        if (move_uploaded_file($_FILES['fileField']['tmp_name'], $upload_path)) {
+            $id_field_name = get_id_field_name($table);
+            
+            $image_url = str_replace("../", "", $upload_path);
+            $update_sql = "UPDATE $table SET image_url = '" . mysqli_real_escape_string($connection, $image_url) . "' WHERE $id_field_name = '$new_id'";
+            mysqli_query($connection, $update_sql);
+        }
     }
+    
+    confirm_query($result);
+    return $new_id;
+}
 
+/**
+ * Update existing record in database
+ */
+function update($table, $data, $id, $options = array()) {
+    global $connection;
+    
+    // Validate inputs
+    if (empty($table) || empty($data) || empty($id)) {
+        return ['success' => false, 'message' => 'Missing required parameters'];
+    }
+    
+    // Sanitize ID
+    $id = intval($id);
+    if ($id <= 0) {
+        return ['success' => false, 'message' => 'Invalid ID provided'];
+    }
+    
+    // Get table configuration
+    $id_field = get_id_field_name($table);
+    $table_columns = getTableColumns($table);
+    
+    if (empty($table_columns)) {
+        return ['success' => false, 'message' => 'Invalid table specified'];
+    }
+    
+    // Check if record exists
+    $check_sql = "SELECT COUNT(*) as count FROM `$table` WHERE `$id_field` = ?";
+    $stmt = mysqli_prepare($connection, $check_sql);
+    mysqli_stmt_bind_param($stmt, "i", $id);
+    mysqli_stmt_execute($stmt);
+    $result = mysqli_stmt_get_result($stmt);
+    $row = mysqli_fetch_assoc($result);
+    mysqli_stmt_close($stmt);
+    
+    if ($row['count'] == 0) {
+        return ['success' => false, 'message' => 'Record not found'];
+    }
+    
+    // Custom validation if provided
+    if (isset($options['validator']) && is_callable($options['validator'])) {
+        $validation = call_user_func($options['validator'], $data, $id, $table);
+        if (!$validation['valid']) {
+            return ['success' => false, 'message' => $validation['message']];
+        }
+    }
+    
+    try {
+        // Start transaction
+        mysqli_autocommit($connection, false);
+        
+        // Filter data to only include valid table columns
+        $filtered_data = array();
+        foreach ($data as $field => $value) {
+            if (isset($table_columns[$field])) {
+                $filtered_data[$field] = $value;
+            }
+        }
+        
+        if (empty($filtered_data)) {
+            mysqli_rollback($connection);
+            mysqli_autocommit($connection, true);
+            return ['success' => false, 'message' => 'No valid fields to update'];
+        }
+        
+        // Build SET clause
+        $set_clauses = array();
+        $values = array();
+        $types = '';
+        
+        foreach ($filtered_data as $field => $value) {
+            $set_clauses[] = "`$field` = ?";
+            
+            if ($value === null) {
+                $values[] = null;
+                $types .= 's';
+            } else {
+                $values[] = $value;
+                // Determine type based on table column info
+                if (strpos($table_columns[$field]['type'], 'int') !== false || 
+                    strpos($table_columns[$field]['type'], 'decimal') !== false ||
+                    strpos($table_columns[$field]['type'], 'float') !== false ||
+                    strpos($table_columns[$field]['type'], 'double') !== false) {
+                    $types .= is_float($value) ? 'd' : 'i';
+                } else {
+                    $types .= 's';
+                }
+            }
+        }
+        
+        // Add updated_at if column exists
+        $has_updated_at = isset($table_columns['updated_at']);
+        if ($has_updated_at) {
+            $set_clauses[] = "`updated_at` = NOW()";
+        }
+        
+        // Add ID parameter
+        $values[] = $id;
+        $types .= 'i';
+        
+        // Build and execute UPDATE query
+        $sql = "UPDATE `$table` SET " . implode(', ', $set_clauses) . " WHERE `$id_field` = ?";
+        $stmt = mysqli_prepare($connection, $sql);
+        
+        if (!$stmt) {
+            throw new Exception('Failed to prepare update statement: ' . mysqli_error($connection));
+        }
+        
+        // Bind parameters dynamically
+        if (!empty($values)) {
+            mysqli_stmt_bind_param($stmt, $types, ...$values);
+        }
+        
+        $result = mysqli_stmt_execute($stmt);
+        
+        if (!$result) {
+            throw new Exception('Failed to execute update: ' . mysqli_stmt_error($stmt));
+        }
+        
+        $affected_rows = mysqli_stmt_affected_rows($stmt);
+        mysqli_stmt_close($stmt);
+        
+        // Handle file upload if present
+        if (isset($_FILES['fileField']) && $_FILES['fileField']['tmp_name']) {
+            $upload_success = handle_file_upload_for_update($table, $id);
+            if (!$upload_success['success']) {
+                // Log warning but don't fail the update
+                error_log("Warning: File upload failed during update: " . $upload_success['message']);
+            }
+        }
+        
+        // Commit transaction
+        mysqli_commit($connection);
+        mysqli_autocommit($connection, true);
+        
+        if ($affected_rows > 0) {
+            return ['success' => true, 'message' => 'Record updated successfully', 'affected_rows' => $affected_rows];
+        } else {
+            return ['success' => true, 'message' => 'No changes made (data identical)', 'affected_rows' => 0];
+        }
+        
+    } catch (Exception $e) {
+        // Rollback transaction on error
+        mysqli_rollback($connection);
+        mysqli_autocommit($connection, true);
+        error_log("Error updating record in table '$table': " . $e->getMessage());
+        return ['success' => false, 'message' => 'Update failed: ' . $e->getMessage()];
+    }
+}
+
+/**
+ * Handle file upload for record updates
+ */
+function handle_file_upload_for_update($table, $id) {
+    global $connection;
+    
+    $newname = "$id.jpg";
+    $upload_dir = get_upload_directory($table);
+    $upload_path = $upload_dir . $newname;
+    
+    if (!file_exists($upload_dir)) {
+        mkdir($upload_dir, 0777, true);
+    }
+    
+    if (move_uploaded_file($_FILES['fileField']['tmp_name'], $upload_path)) {
+        $id_field_name = get_id_field_name($table);
+        $image_url = str_replace("../", "", $upload_path);
+        
+        $update_sql = "UPDATE `$table` SET image_url = ? WHERE `$id_field_name` = ?";
+        $stmt = mysqli_prepare($connection, $update_sql);
+        mysqli_stmt_bind_param($stmt, "si", $image_url, $id);
+        $result = mysqli_stmt_execute($stmt);
+        mysqli_stmt_close($stmt);
+        
+        if ($result) {
+            return ['success' => true, 'message' => 'File uploaded successfully'];
+        } else {
+            return ['success' => false, 'message' => 'Failed to update image URL in database'];
+        }
+    } else {
+        return ['success' => false, 'message' => 'Failed to move uploaded file'];
+    }
+}
+
+/**
+ * =============================================================================
+ * HELPER FUNCTIONS
+ * =============================================================================
+ */
+
+/**
+ * Get upload directory for table
+ */
 function get_upload_directory($table) {
     return "../assets/images/" . TableConfig::getImageDirectory($table) . "/";
 }
 
+/**
+ * Get ID field name for table
+ */
 function get_id_field_name($table) {
     return TableConfig::getIdField($table);
 }
 
+/**
+ * Get image path for table record
+ */
 function get_image_path($row, $table) {
-    // Use helper functions for consistency
     $base_dir = get_upload_directory($table);
     $id_field = get_id_field_name($table);
     $id = $row[$id_field] ?? $row['id'] ?? null;
     $placeholder = $base_dir . 'placeholder.jpg';
     
+    // Check if image_url exists in row
     if (!empty($row['image_url'])) {
         if (file_exists($row['image_url'])) {
             return $row['image_url'];
@@ -110,6 +338,7 @@ function get_image_path($row, $table) {
         }
     }
     
+    // Check for ID-based image
     if ($id && file_exists($base_dir . $id . '.jpg')) {
         return $base_dir . $id . '.jpg';
     }
@@ -117,12 +346,9 @@ function get_image_path($row, $table) {
     return $placeholder;
 }
 
-function display_table($table_name, $sql = null, $options = array()) {
-    require_once dirname(__FILE__) . '/admin_display_model.php';
-    
-    display_admin_table($table_name, $sql, $options);
-}
-
+/**
+ * Get table column information
+ */
 function getTableColumns($table_name) {
     global $connection;
     
@@ -145,45 +371,50 @@ function getTableColumns($table_name) {
     return $columns;
 }
 
+/**
+ * =============================================================================
+ * TABLE DISPLAY FUNCTIONS
+ * =============================================================================
+ */
 
+/**
+ * Universal table display function
+ */
+/**
+ * Universal table display function
+ */
+function display_table($table_name, $sql = null, $options = array()) {
+    display_admin_table($table_name, $sql, $options);
+}
+
+/**
+ * =============================================================================
+ * CONVENIENCE FUNCTIONS FOR SPECIFIC TABLES
+ * =============================================================================
+ */
+
+/**
+ * Display menu table with predefined configuration
+ */
 function display_menu_table($sql = null) {
-    // Use centralized configuration
     $options = [
         'columns' => [
-            'image_url' => [
-                'label' => 'Image',
-                'type' => 'image'
-            ],
-            'name' => [
-                'label' => 'Name',
-                'type' => 'string'
-            ],
-            'category' => [
-                'label' => 'Category',
-                'type' => 'string'
-            ],
-            'price' => [
-                'label' => 'Price',
-                'type' => 'price'
-            ],
-            'preparation_time' => [
-                'label' => 'Prep Time',
-                'type' => 'prep_time'
-            ],
-            'is_available' => [
-                'label' => 'Available',
-                'type' => 'boolean'
-            ],
-            'created_at' => [
-                'label' => 'Created',
-                'type' => 'datetime'
-            ]
+            'image_url' => ['label' => 'Image', 'type' => 'image'],
+            'name' => ['label' => 'Name', 'type' => 'string'],
+            'category' => ['label' => 'Category', 'type' => 'string'],
+            'price' => ['label' => 'Price', 'type' => 'price'],
+            'preparation_time' => ['label' => 'Prep Time', 'type' => 'prep_time'],
+            'is_available' => ['label' => 'Available', 'type' => 'boolean'],
+            'created_at' => ['label' => 'Created', 'type' => 'datetime']
         ],
         'actions' => TableConfig::getActions('menu')
     ];
     display_table('menu', $sql, $options);
 }
 
+/**
+ * Display users table with predefined configuration
+ */
 function display_users_table($sql = null) {
     $options = [
         'actions' => TableConfig::getActions('users')
@@ -191,53 +422,35 @@ function display_users_table($sql = null) {
     display_table('users', $sql, $options);
 }
 
+/**
+ * Display events table with predefined configuration
+ */
 function display_events_table($sql = null) {
+    $options = [
+        'actions' => TableConfig::getActions('events')
+    ];
+    display_table('events', $sql, $options);
     $options = [
         'actions' => TableConfig::getActions('events')
     ];
     display_table('events', $sql, $options);
 }
 
+/**
+ * Display orders table with predefined configuration
+ */
 function display_orders_table($sql = null) {
-    // Custom column configuration for orders display
     $options = [
         'columns' => [
-            'order_id' => [
-                'label' => 'Order #',
-                'type' => 'string'
-            ],
-            'customer_name' => [
-                'label' => 'Customer',
-                'type' => 'string'
-            ],
-            'customer_email' => [
-                'label' => 'Email',
-                'type' => 'email'
-            ],
-            'phone' => [
-                'label' => 'Phone',
-                'type' => 'phone'
-            ],
-            'item_count' => [
-                'label' => 'Items',
-                'type' => 'string'
-            ],
-            'total_amount' => [
-                'label' => 'Total',
-                'type' => 'price'
-            ],
-            'status' => [
-                'label' => 'Status',
-                'type' => 'status'
-            ],
-            'payment_status' => [
-                'label' => 'Payment',
-                'type' => 'status'
-            ],
-            'order_date' => [
-                'label' => 'Order Date',
-                'type' => 'datetime'
-            ]
+            'order_id' => ['label' => 'Order #', 'type' => 'string'],
+            'customer_name' => ['label' => 'Customer', 'type' => 'string'],
+            'customer_email' => ['label' => 'Email', 'type' => 'email'],
+            'phone' => ['label' => 'Phone', 'type' => 'phone'],
+            'item_count' => ['label' => 'Items', 'type' => 'string'],
+            'total_amount' => ['label' => 'Total', 'type' => 'price'],
+            'status' => ['label' => 'Status', 'type' => 'status'],
+            'payment_status' => ['label' => 'Payment', 'type' => 'status'],
+            'order_date' => ['label' => 'Order Date', 'type' => 'datetime']
         ],
         'actions' => TableConfig::getActions('orders')
     ];
@@ -245,6 +458,15 @@ function display_orders_table($sql = null) {
     display_table('orders', $sql, $options);
 }
 
+/**
+ * =============================================================================
+ * RECORD MANAGEMENT FUNCTIONS
+ * =============================================================================
+ */
+
+/**
+ * Delete record from table
+ */
 function delete_record($table, $id_value) {
     global $connection;
     

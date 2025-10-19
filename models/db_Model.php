@@ -608,5 +608,241 @@ function get_and_delete_image($table, $id_field, $id_value) {
     return ['success' => true, 'message' => 'Image cleanup completed'];
 }
 
+// ======================================================================
+// USER AUTHENTICATION FUNCTIONS
+// ======================================================================
+
+/**
+ * Authenticate user login
+ * @param string $email User's email
+ * @param string $password Plain text password
+ * @return array Array with 'success' boolean and 'user' data or 'message' error
+ */
+function authenticate_user($email, $password) {
+    global $connection;
+    
+    if (!$connection) {
+        return ['success' => false, 'message' => 'Database connection failed'];
+    }
+    
+    try {
+        // Prepare statement to get user by email
+        $sql = "SELECT user_id, first_name, last_name, email, password, is_active 
+                FROM users WHERE email = ? AND is_active = 1 LIMIT 1";
+        
+        $stmt = mysqli_prepare($connection, $sql);
+        if (!$stmt) {
+            return ['success' => false, 'message' => 'Database error occurred'];
+        }
+        
+        mysqli_stmt_bind_param($stmt, "s", $email);
+        
+        if (!mysqli_stmt_execute($stmt)) {
+            mysqli_stmt_close($stmt);
+            return ['success' => false, 'message' => 'Database error occurred'];
+        }
+        
+        $result = mysqli_stmt_get_result($stmt);
+        $user = mysqli_fetch_assoc($result);
+        mysqli_stmt_close($stmt);
+        
+        if (!$user) {
+            return ['success' => false, 'message' => 'Invalid email or password'];
+        }
+        
+        // Verify password
+        if (password_verify($password, $user['password'])) {
+            // Remove password from user data for security
+            unset($user['password']);
+            return ['success' => true, 'user' => $user];
+        } else {
+            return ['success' => false, 'message' => 'Invalid email or password'];
+        }
+        
+    } catch (Exception $e) {
+        error_log("Authentication error: " . $e->getMessage());
+        return ['success' => false, 'message' => 'Authentication failed'];
+    }
+}
+
+/**
+ * Register a new user
+ * @param array $user_data Array containing user information
+ * @return array Array with 'success' boolean and 'user_id' or 'message'
+ */
+function register_user($user_data) {
+    global $connection;
+    
+    if (!$connection) {
+        return ['success' => false, 'message' => 'Database connection failed'];
+    }
+    
+    // Validate required fields
+    $required_fields = ['first_name', 'last_name', 'email', 'password'];
+    foreach ($required_fields as $field) {
+        if (empty($user_data[$field])) {
+            return ['success' => false, 'message' => ucfirst(str_replace('_', ' ', $field)) . ' is required'];
+        }
+    }
+    
+    // Validate email format
+    if (!filter_var($user_data['email'], FILTER_VALIDATE_EMAIL)) {
+        return ['success' => false, 'message' => 'Invalid email format'];
+    }
+    
+    // Validate password length
+    if (strlen($user_data['password']) < 6) {
+        return ['success' => false, 'message' => 'Password must be at least 6 characters'];
+    }
+    
+    try {
+        // Check if email already exists
+        $check_email_sql = "SELECT COUNT(*) as count FROM users WHERE email = ?";
+        $stmt = mysqli_prepare($connection, $check_email_sql);
+        mysqli_stmt_bind_param($stmt, "s", $user_data['email']);
+        mysqli_stmt_execute($stmt);
+        $result = mysqli_stmt_get_result($stmt);
+        $row = mysqli_fetch_assoc($result);
+        mysqli_stmt_close($stmt);
+        
+        if ($row['count'] > 0) {
+            return ['success' => false, 'message' => 'Email address already exists'];
+        }
+        
+        // Hash password
+        $hashed_password = password_hash($user_data['password'], PASSWORD_DEFAULT);
+        
+        // Prepare user data for insertion
+        $insert_data = [
+            'first_name' => trim($user_data['first_name']),
+            'last_name' => trim($user_data['last_name']),
+            'email' => trim($user_data['email']),
+            'password' => $hashed_password,
+            'phone' => isset($user_data['phone']) ? trim($user_data['phone']) : '',
+            'address' => isset($user_data['address']) ? trim($user_data['address']) : '',
+            'city' => isset($user_data['city']) ? trim($user_data['city']) : '',
+            'state' => isset($user_data['state']) ? trim($user_data['state']) : '',
+            'zip_code' => isset($user_data['zip_code']) ? trim($user_data['zip_code']) : '',
+            'is_active' => 1
+        ];
+        
+        // Use existing save function
+        $user_id = save('users', $insert_data);
+        
+        if ($user_id) {
+            return ['success' => true, 'user_id' => $user_id, 'message' => 'Account created successfully'];
+        } else {
+            return ['success' => false, 'message' => 'Failed to create account. Please try again.'];
+        }
+        
+    } catch (Exception $e) {
+        error_log("Registration error: " . $e->getMessage());
+        return ['success' => false, 'message' => 'Registration failed'];
+    }
+}
+
+/**
+ * Start user session
+ * @param array $user User data from database
+ */
+function start_user_session($user) {
+    if (session_status() == PHP_SESSION_NONE) {
+        session_start();
+    }
+    
+    $_SESSION['user_logged_in'] = true;
+    $_SESSION['user_id'] = $user['user_id'];
+    $_SESSION['user_email'] = $user['email'];
+    $_SESSION['user_first_name'] = $user['first_name'];
+    $_SESSION['user_last_name'] = $user['last_name'];
+    $_SESSION['login_time'] = time();
+}
+
+/**
+ * Check if user is logged in
+ * @return bool True if user is logged in, false otherwise
+ */
+function is_user_logged_in() {
+    if (session_status() == PHP_SESSION_NONE) {
+        session_start();
+    }
+    
+    return isset($_SESSION['user_logged_in']) && $_SESSION['user_logged_in'] === true;
+}
+
+/**
+ * Get logged in user data with complete profile information
+ * @return array|null User data or null if not logged in
+ */
+function get_logged_in_user() {
+    if (!is_user_logged_in()) {
+        return null;
+    }
+    
+    global $connection;
+    $user_id = $_SESSION['user_id'];
+    
+    // Fetch complete user data from database
+    $query = "SELECT user_id, first_name, last_name, email, phone, address, city, state, zip_code, created_at, updated_at 
+              FROM users WHERE user_id = ? AND is_active = 1";
+    
+    $stmt = mysqli_prepare($connection, $query);
+    mysqli_stmt_bind_param($stmt, "i", $user_id);
+    mysqli_stmt_execute($stmt);
+    $result = mysqli_stmt_get_result($stmt);
+    
+    if ($row = mysqli_fetch_assoc($result)) {
+        // Add login time from session
+        $row['login_time'] = $_SESSION['login_time'];
+        mysqli_stmt_close($stmt);
+        return $row;
+    }
+    
+    mysqli_stmt_close($stmt);
+    
+    // If user not found in database, logout
+    logout_user();
+    return null;
+}
+
+/**
+ * Logout user and destroy session
+ */
+function logout_user() {
+    if (session_status() == PHP_SESSION_NONE) {
+        session_start();
+    }
+    
+    // Unset all session variables
+    $_SESSION = array();
+    
+    // Destroy the session cookie
+    if (ini_get("session.use_cookies")) {
+        $params = session_get_cookie_params();
+        setcookie(session_name(), '', time() - 42000,
+            $params["path"], $params["domain"],
+            $params["secure"], $params["httponly"]
+        );
+    }
+    
+    // Destroy the session
+    session_destroy();
+}
+
+/**
+ * Require user login - redirect to login page if not logged in
+ * @param string $redirect_url URL to redirect to after login
+ */
+function require_user_login($redirect_url = null) {
+    if (!is_user_logged_in()) {
+        $login_url = 'login.php';
+        if ($redirect_url) {
+            $login_url .= '?redirect=' . urlencode($redirect_url);
+        }
+        redirect_to($login_url);
+        exit;
+    }
+}
+
 
 ?>

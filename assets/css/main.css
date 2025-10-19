@@ -27,6 +27,7 @@ body {
     position: sticky;
     top: 0;
     z-index: 1000;
+    overflow: visible; /* Ensure dropdown can extend beyond header */
 }
 
 .logo h1 {
@@ -77,6 +78,59 @@ body {
     color: #f9ed69;
     background-color: rgba(255, 255, 255, 0.1);
     transform: translateY(-2px);
+}
+
+/* User Navigation */
+.user-nav {
+    float: right;
+    margin-top: 10px;
+    margin-left: 20px;
+    overflow: visible; /* Ensure dropdown can extend beyond nav area */
+}
+
+/* User Menu */
+.user-menu {
+    position: relative;
+    display: inline-block;
+}
+
+.user-greeting {
+    color: white;
+    font-size: 0.9rem;
+    font-weight: 500;
+    padding: 8px 12px;
+    cursor: pointer;
+    border-radius: 6px;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    text-decoration: none;
+}
+
+.user-greeting i {
+    margin-right: 8px;
+    font-size: 1.1rem;
+    color: #f9ed69;
+}
+
+.user-greeting:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: #f9ed69;
+    text-decoration: none;
+    transform: translateY(-1px);
+}
+
+/* Header responsive container */
+.main-header .container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.main-header .container::after {
+    content: "";
+    display: table;
+    clear: both;
 }
 
 /* Showcase */
@@ -642,20 +696,28 @@ body {
         width: 90%;
     }
     
-    .logo h1, .main-nav {
+    .main-header .container {
+        flex-direction: column;
+        align-items: center;
+        gap: 1rem;
+    }
+    
+    .logo h1, .main-nav, .user-nav {
         float: none;
         text-align: center;
+        margin: 0;
     }
     
     .main-nav ul {
         flex-direction: column;
+        gap: 10px;
     }
     
     .main-nav li {
-        margin: 10px 0;
+        margin: 0;
     }
 
-    .sidebar {
+    .category-filter {
         width: 100%;
         max-width: 320px;
     }

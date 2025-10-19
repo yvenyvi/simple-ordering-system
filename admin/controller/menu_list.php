@@ -141,6 +141,11 @@ function handleToggleAvailability() {
         mysqli_stmt_close($stmt);
         
         $status_text = $new_status ? 'available' : 'unavailable';
+        
+        // Clear any lingering error messages
+        unset($GLOBALS['error_message']);
+        unset($GLOBALS['success_message']);
+        
         echo json_encode([
             'success' => true,
             'message' => "Menu item marked as {$status_text}",
@@ -269,6 +274,10 @@ function handleUpdateMenu() {
         $update_result = update('menu', $menu_data, $menu_id, ['validator' => $validator]);
         
         if ($update_result['success']) {
+            // Clear any lingering error messages
+            unset($GLOBALS['error_message']);
+            unset($GLOBALS['success_message']);
+            
             echo json_encode([
                 'success' => true,
                 'message' => "Menu item '{$menu_data['name']}' updated successfully"
@@ -310,7 +319,13 @@ if (isset($_GET['deleteid'])) {
     redirect_to("menu_list.php");
 }
 
-if (isset($_POST['name'])) {
+// Handle NEW menu item creation (not AJAX updates)
+// Only run if this is a regular form submission, not an AJAX request
+if (isset($_POST['name']) && 
+    !isset($_POST['action']) && 
+    !isset($_POST['menu_id']) && 
+    !isset($_GET['action']) &&
+    (!isset($_SERVER['HTTP_X_REQUESTED_WITH']) || strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) !== 'xmlhttprequest')) {
     // Validate input data
     $errors = [];
     
@@ -324,7 +339,7 @@ if (isset($_POST['name'])) {
         $errors[] = "Valid price is required";
     }
     
-    // Check if menu item name already exists
+    // Check if menu item name already exists (for NEW items only)
     global $connection;
     $name_check_sql = "SELECT COUNT(*) as count FROM menu WHERE name = ?";
     $stmt = mysqli_prepare($connection, $name_check_sql);

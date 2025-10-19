@@ -158,15 +158,27 @@ if (isset($_POST['action']) && $_POST['action'] === 'edit' && isset($_POST['edit
         $update_result = update('users', $user_data, $user_id);
         
         if ($update_result['success']) {
-            $success_message = "User '{$user_data['first_name']} {$user_data['last_name']}' has been successfully updated!";
-            redirect_to("../user_list.php?success=" . urlencode($success_message));
+            header('Content-Type: application/json');
+            echo json_encode([
+                'success' => true,
+                'message' => "User '{$user_data['first_name']} {$user_data['last_name']}' has been successfully updated!"
+            ]);
+            exit;
         } else {
-            $error_message = "Failed to update user: " . $update_result['message'];
-            redirect_to("../user_list.php?error=" . urlencode($error_message));
+            header('Content-Type: application/json');
+            echo json_encode([
+                'success' => false,
+                'message' => "Failed to update user: " . $update_result['message']
+            ]);
+            exit;
         }
     } else {
-        $error_message = "Please fix the following errors: " . implode(", ", $errors);
-        redirect_to("../user_list.php?error=" . urlencode($error_message));
+        header('Content-Type: application/json');
+        echo json_encode([
+            'success' => false,
+            'message' => "Please fix the following errors: " . implode(", ", $errors)
+        ]);
+        exit;
     }
 }
 

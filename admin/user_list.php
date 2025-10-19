@@ -279,4 +279,39 @@ require_once 'controller/user_list.php';
     <!-- User Management JS -->
     <script src="../assets/js/user_management.js"></script>
 
+    <!-- Handle PHP messages -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Handle URL parameters for messages
+            const urlParams = new URLSearchParams(window.location.search);
+            const successParam = urlParams.get('success');
+            const errorParam = urlParams.get('error');
+            
+            if (successParam) {
+                showUserMessages(successParam, null);
+                // Clean URL after showing message
+                const url = new URL(window.location);
+                url.searchParams.delete('success');
+                window.history.replaceState({}, document.title, url);
+            }
+            
+            if (errorParam) {
+                showUserMessages(null, errorParam);
+                // Clean URL after showing message
+                const url = new URL(window.location);
+                url.searchParams.delete('error');
+                window.history.replaceState({}, document.title, url);
+            }
+
+            // Show success/error messages using Bootstrap alerts
+            <?php if (isset($success_message)): ?>
+                showUserMessages('<?php echo addslashes($success_message); ?>', null);
+            <?php endif; ?>
+
+            <?php if (isset($error_message)): ?>
+                showUserMessages(null, '<?php echo addslashes($error_message); ?>');
+            <?php endif; ?>
+        });
+    </script>
+
     <?php include 'includes/footer.php'; ?>

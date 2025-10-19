@@ -52,12 +52,20 @@ function editMenuItem(id) {
             const modal = new bootstrap.Modal(document.getElementById('editMenuModal'));
             modal.show();
         } else {
-            alert('Error loading menu item for editing');
+            if (typeof showBootstrapAlert === 'function') {
+                showBootstrapAlert('Error loading menu item for editing', 'error', 5000);
+            } else {
+                alert('Error loading menu item for editing');
+            }
         }
     })
     .catch(error => {
         console.error('Error:', error);
-        alert('Error loading menu item');
+        if (typeof showBootstrapAlert === 'function') {
+            showBootstrapAlert('Error loading menu item', 'error', 5000);
+        } else {
+            alert('Error loading menu item');
+        }
     });
 }
 
@@ -73,15 +81,28 @@ function toggleAvailability(id) {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            // Reload the table to reflect changes
-            location.reload();
+            // Show success message and reload
+            if (typeof showBootstrapAlert === 'function') {
+                showBootstrapAlert(data.message || 'Availability updated successfully', 'success', 3000);
+            }
+            setTimeout(() => {
+                location.reload();
+            }, 1000);
         } else {
-            alert(data.message || 'Error toggling availability');
+            if (typeof showBootstrapAlert === 'function') {
+                showBootstrapAlert(data.message || 'Error toggling availability', 'error', 5000);
+            } else {
+                alert(data.message || 'Error toggling availability');
+            }
         }
     })
     .catch(error => {
         console.error('Error:', error);
-        alert('Error toggling availability');
+        if (typeof showBootstrapAlert === 'function') {
+            showBootstrapAlert('Error toggling availability', 'error', 5000);
+        } else {
+            alert('Error toggling availability');
+        }
     });
 }
 
@@ -104,16 +125,33 @@ document.addEventListener('DOMContentLoaded', function() {
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
+                    // Show success message
+                    if (typeof showBootstrapAlert === 'function') {
+                        showBootstrapAlert(data.message || 'Menu item updated successfully', 'success', 4000);
+                    }
+                    
                     const modal = bootstrap.Modal.getInstance(document.getElementById('editMenuModal'));
                     modal.hide();
-                    location.reload(); // Reload to show updated data
+                    
+                    // Reload to show updated data
+                    setTimeout(() => {
+                        location.reload();
+                    }, 1500);
                 } else {
-                    alert(data.message || 'Error updating menu item');
+                    if (typeof showBootstrapAlert === 'function') {
+                        showBootstrapAlert(data.message || 'Error updating menu item', 'error', 6000);
+                    } else {
+                        alert(data.message || 'Error updating menu item');
+                    }
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
-                alert('Error updating menu item');
+                if (typeof showBootstrapAlert === 'function') {
+                    showBootstrapAlert('Error updating menu item', 'error', 5000);
+                } else {
+                    alert('Error updating menu item');
+                }
             });
         });
     }

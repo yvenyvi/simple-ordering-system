@@ -10,6 +10,12 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initialize results count
     const tableRows = document.querySelectorAll('.admin-enhanced-table tbody tr, table tbody tr');
     updateResultsCount(tableRows.length, tableRows.length);
+    
+    // Setup edit user form AJAX submission
+    const editUserForm = document.getElementById('editUserForm');
+    if (editUserForm) {
+        editUserForm.addEventListener('submit', handleEditUserSubmit);
+    }
 });
 
 function initializeUserManagement() {
@@ -349,4 +355,81 @@ function updateResultsCount(visible, total) {
             resultsCount.textContent = `Showing ${visible} of ${total} users`;
         }
     }
+}
+
+/**
+ * Show user management messages using Bootstrap alerts
+ */
+function showUserMessages(successMessage, errorMessage) {
+    if (successMessage && typeof showBootstrapAlert === 'function') {
+        showBootstrapAlert(successMessage, 'success', 4000);
+    }
+    if (errorMessage && typeof showBootstrapAlert === 'function') {
+        showBootstrapAlert(errorMessage, 'error', 6000);
+    }
+}
+
+/**
+ * Show informational user messages
+ */
+function showUserInfoMessage(message, duration = 5000) {
+    if (message && typeof showBootstrapAlert === 'function') {
+        showBootstrapAlert(message, 'info', duration);
+    }
+}
+
+/**
+ * Handle edit user form submission via AJAX
+ */
+function handleEditUserSubmit(event) {
+    event.preventDefault();
+    
+    const form = event.target;
+    const formData = new FormData(form);
+    const submitButton = form.querySelector('button[type="submit"]');
+    
+    // Disable submit button during request
+    const originalText = submitButton.innerHTML;
+    submitButton.disabled = true;
+    submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Updating...';
+    
+    fetch('controller/user_list.php', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.success) {
+            // Show success message
+            showUserMessages(data.message, null);
+            
+            // Close modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('userEditModal'));
+            if (modal) {
+                modal.hide();
+            }
+            
+            // Reload page to show updated data
+            setTimeout(() => {
+                window.location.reload();
+            }, 1500);
+        } else {
+            // Show error message
+            showUserMessages(null, data.message || 'Failed to update user');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showUserMessages(null, 'Network error occurred. Please try again.');
+    })
+    .finally(() => {
+        // Re-enable submit button
+        submitButton.disabled = false;
+        submitButton.innerHTML = originalText;
+    });
 }

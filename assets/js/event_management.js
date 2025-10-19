@@ -583,13 +583,25 @@ function toggleEventStatus(eventId, currentStatus) {
     .then(data => {
         if (data.success) {
             if (typeof showBootstrapAlert === 'function') {
-                showBootstrapAlert(data.message || 'Event status updated successfully!', 'success', 4000);
+                showBootstrapAlert(data.message || 'Event status updated successfully!', 'success', 2000);
+                // Give user time to see the success message, then fade out before reloading
+                setTimeout(() => {
+                    // Hide any visible alerts to prevent visual glitch
+                    const alerts = document.querySelectorAll('.alert');
+                    alerts.forEach(alert => {
+                        alert.style.transition = 'opacity 0.3s ease';
+                        alert.style.opacity = '0';
+                    });
+                    
+                    // Reload after fade out
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 300);
+                }, 1200);
             } else {
                 alert(data.message || 'Event status updated successfully!');
+                window.location.reload();
             }
-            
-            // Reload the page to show updated data
-            window.location.reload();
         } else {
             if (typeof showBootstrapAlert === 'function') {
                 showBootstrapAlert(data.message || 'Error updating event status', 'error', 5000);

@@ -495,8 +495,16 @@ document.addEventListener('DOMContentLoaded', function() {
                 formData.append('fileField', fileField.files[0]);
             }
             
-            // Convert checkbox to proper value
-            formData.append('is_active', document.getElementById('edit-event-active').checked ? '1' : '0');
+            // Convert checkbox to proper value (if checkbox exists)
+            const activeCheckbox = document.getElementById('edit-event-active');
+            if (activeCheckbox) {
+                formData.append('is_active', activeCheckbox.checked ? '1' : '0');
+            } else {
+                // If no checkbox, get current status from disable button
+                const disableBtn = document.getElementById('disableEventBtn');
+                const isCurrentlyActive = disableBtn && disableBtn.textContent.includes('Disable');
+                formData.append('is_active', isCurrentlyActive ? '1' : '0');
+            }
             
             // Validate required fields
             const eventName = document.getElementById('edit-event-name').value.trim();

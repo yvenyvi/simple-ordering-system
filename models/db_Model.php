@@ -430,10 +430,6 @@ function display_events_table($sql = null) {
         'actions' => TableConfig::getActions('events')
     ];
     display_table('events', $sql, $options);
-    $options = [
-        'actions' => TableConfig::getActions('events')
-    ];
-    display_table('events', $sql, $options);
 }
 
 /**

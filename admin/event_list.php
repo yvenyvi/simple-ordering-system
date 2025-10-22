@@ -285,6 +285,12 @@ require_once 'controller/event_list.php';
                                 <img id="current-image" src="" alt="Current Event Image" class="img-thumbnail" style="max-height: 100px;">
                             </div>
                         </div>
+                        <div class="form-group checkbox-group">
+                            <label class="form-check-label">
+                                <input type="checkbox" id="edit-event-active" name="is_active" class="form-check-input">
+                                Active event (visible to customers)
+                            </label>
+                        </div>
                     </form>
                 </div>
                 <div class="modal-footer">
@@ -308,22 +314,19 @@ require_once 'controller/event_list.php';
     <script src="../assets/js/admin.js"></script>
     <!-- Event Management JS -->
     <script src="../assets/js/event_management.js"></script>
+    <!-- Event List Page JS -->
+    <script src="../assets/js/event_list_page.js"></script>
 
-    <!-- Handle PHP messages -->
+    <!-- Initialize PHP messages -->
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // Show success/error messages using Bootstrap alerts
-            <?php if (isset($success_message)): ?>
-                showEventMessages('<?php echo addslashes($success_message); ?>', null);
-            <?php endif; ?>
-
-            <?php if (isset($error_message)): ?>
-                showEventMessages(null, '<?php echo addslashes($error_message); ?>');
-            <?php endif; ?>
-
-            <?php if (isset($info_message)): ?>
-                showEventInfoMessage('<?php echo addslashes($info_message); ?>');
-            <?php endif; ?>
+            const messages = {
+                success: <?php echo isset($success_message) ? json_encode($success_message) : 'null'; ?>,
+                error: <?php echo isset($error_message) ? json_encode($error_message) : 'null'; ?>,
+                info: <?php echo isset($info_message) ? json_encode($info_message) : 'null'; ?>
+            };
+            
+            initializeEventMessages(messages);
         });
     </script>
 

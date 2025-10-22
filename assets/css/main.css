@@ -82,10 +82,24 @@ body {
 
 /* User Navigation */
 .user-nav {
-    float: right;
-    margin-top: 10px;
-    margin-left: 20px;
-    overflow: visible; /* Ensure dropdown can extend beyond nav area */
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.user-nav a {
+    color: white;
+    text-decoration: none;
+    padding: 8px 15px;
+    border-radius: 5px;
+    transition: all 0.3s ease;
+    font-weight: 500;
+}
+
+.user-nav a:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: #f9ed69;
+    transform: translateY(-2px);
 }
 
 /* User Menu */

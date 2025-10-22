@@ -50,8 +50,19 @@ try {
     // Start transaction
     mysqli_autocommit($connection, false);
     
-    // Check if user exists, if not create one
-    $user_id = findOrCreateUser($customer_info);
+    // Start session to check if user is logged in
+    if (session_status() == PHP_SESSION_NONE) {
+        session_start();
+    }
+    
+    // Check if user is logged in, otherwise find or create user
+    if (is_user_logged_in()) {
+        $user_id = $_SESSION['user_id'];
+        // Update user's information with latest details from order
+        updateUserInfo($user_id, $customer_info);
+    } else {
+        $user_id = findOrCreateUser($customer_info);
+    }
     
     // Calculate total amount
     $total_amount = 0;
@@ -150,5 +161,24 @@ function findOrCreateUser($customer_info) {
     ];
     
     return save('users', $user_data);
+}
+
+/**
+ * Update user information from order details
+ */
+function updateUserInfo($user_id, $customer_info) {
+    global $connection;
+    
+    // Update user's contact and address information
+    $update_data = [
+        'phone' => $customer_info['phone'],
+        'address' => $customer_info['address'],
+        'city' => $customer_info['city'] ?? '',
+        'state' => $customer_info['state'] ?? '',
+        'zip_code' => $customer_info['zip_code'] ?? ''
+    ];
+    
+    // Use the update function from db_Model.php
+    update('users', $update_data, $user_id);
 }
 ?>

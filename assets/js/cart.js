@@ -1,4 +1,3 @@
-
 class ShoppingCart {
     constructor() {
         this.items = [];
@@ -414,252 +413,240 @@ class ShoppingCart {
 
         const total = this.getTotalCost();
         const itemCount = this.getTotalItems();
-        
-        // Show customer information form
-        Swal.fire({
-            title: 'Customer Information',
-            html: `
-                <div class="customer-form-container">
-                    <form id="customerForm" class="customer-form">
-                        <div class="form-section">
-                            <h6 class="section-title"><i class="fas fa-user"></i> Personal Information</h6>
-                            <div class="form-row">
-                                <div class="form-group col-md-6">
-                                    <label for="firstName">First Name *</label>
-                                    <input type="text" class="form-control" id="firstName" placeholder="Enter first name" required>
-                                </div>
-                                <div class="form-group col-md-6">
-                                    <label for="lastName">Last Name *</label>
-                                    <input type="text" class="form-control" id="lastName" placeholder="Enter last name" required>
-                                </div>
-                            </div>
-                            <div class="form-row">
-                                <div class="form-group col-md-6">
-                                    <label for="email">Email Address *</label>
-                                    <input type="email" class="form-control" id="email" placeholder="Enter email address" required>
-                                </div>
-                                <div class="form-group col-md-6">
-                                    <label for="phone">Phone Number *</label>
-                                    <input type="tel" class="form-control" id="phone" placeholder="Enter phone number" required>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="form-section">
-                            <h6 class="section-title"><i class="fas fa-map-marker-alt"></i> Delivery Information</h6>
-                            <div class="form-group">
-                                <label for="address">Delivery Address *</label>
-                                <textarea class="form-control" id="address" placeholder="Enter complete delivery address" rows="2" required></textarea>
-                            </div>
-                            <div class="form-row">
-                                <div class="form-group col-md-6">
-                                    <label for="city">City</label>
-                                    <input type="text" class="form-control" id="city" placeholder="Enter city">
-                                </div>
-                                <div class="form-group col-md-6">
-                                    <label for="zipCode">ZIP Code</label>
-                                    <input type="text" class="form-control" id="zipCode" placeholder="Enter ZIP code">
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="form-section">
-                            <h6 class="section-title"><i class="fas fa-credit-card"></i> Payment & Notes</h6>
-                            <div class="form-group">
-                                <label for="paymentMethod">Payment Method</label>
-                                <select class="form-control" id="paymentMethod">
-                                    <option value="cash">💵 Cash on Delivery</option>
-                                    <option value="credit_card">💳 Credit Card</option>
-                                    <option value="debit_card">💳 Debit Card</option>
-                                    <option value="online">🌐 Online Payment</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label for="specialInstructions">Special Instructions</label>
-                                <textarea class="form-control" id="specialInstructions" placeholder="Any special requests or delivery instructions..." rows="2"></textarea>
-                            </div>
-                        </div>
-                    </form>
-                    
-                    <div class="order-summary">
-                        <h6 class="summary-title"><i class="fas fa-receipt"></i> Order Summary</h6>
-                        <div class="summary-row">
-                            <span><i class="fas fa-box text-primary"></i> Items:</span>
-                            <span class="summary-value">${itemCount}</span>
-                        </div>
-                        <div class="summary-row total-row">
-                            <span><i class="fas fa-dollar-sign text-success"></i> Total:</span>
-                            <span class="summary-value total-amount">$${total.toFixed(2)}</span>
-                        </div>
-                    </div>
-                </div>
-                
-                <style>
-                    .customer-form-container {
-                        text-align: left;
-                        max-height: 70vh;
-                        overflow-y: auto;
-                        padding: 10px;
-                    }
-                    
-                    .customer-form {
-                        margin-bottom: 20px;
-                    }
-                    
-                    .form-section {
-                        margin-bottom: 25px;
-                        padding: 15px;
-                        border: 1px solid #e9ecef;
-                        border-radius: 8px;
-                        background-color: #f8f9fa;
-                    }
-                    
-                    .section-title {
-                        color: #495057;
-                        margin-bottom: 15px;
-                        font-weight: 600;
-                        border-bottom: 2px solid #dee2e6;
-                        padding-bottom: 8px;
-                    }
-                    
-                    .form-row {
-                        display: flex;
-                        gap: 15px;
-                        margin-bottom: 15px;
-                    }
-                    
-                    .form-group {
-                        flex: 1;
-                        margin-bottom: 15px;
-                    }
-                    
-                    .form-group label {
-                        font-weight: 500;
-                        color: #495057;
-                        margin-bottom: 5px;
-                        display: block;
-                    }
-                    
-                    .form-control {
-                        width: 100%;
-                        padding: 10px 12px;
-                        border: 1px solid #ced4da;
-                        border-radius: 6px;
-                        font-size: 14px;
-                        transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
-                    }
-                    
-                    .form-control:focus {
-                        border-color: #80bdff;
-                        outline: 0;
-                        box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
-                    }
-                    
-                    .order-summary {
-                        background: linear-gradient(135deg, #28a745, #20c997);
-                        color: white;
-                        padding: 20px;
-                        border-radius: 10px;
-                        margin-top: 20px;
-                    }
-                    
-                    .summary-title {
-                        color: white;
-                        margin-bottom: 15px;
-                        font-weight: 600;
-                        text-align: center;
-                    }
-                    
-                    .summary-row {
-                        display: flex;
-                        justify-content: space-between;
-                        align-items: center;
-                        margin-bottom: 8px;
-                        padding: 5px 0;
-                    }
-                    
-                    .total-row {
-                        border-top: 2px solid rgba(255, 255, 255, 0.3);
-                        margin-top: 10px;
-                        padding-top: 10px;
-                        font-weight: 600;
-                        font-size: 1.1em;
-                    }
-                    
-                    .summary-value {
-                        font-weight: 600;
-                    }
-                    
-                    .total-amount {
-                        font-size: 1.2em;
-                        color: #fff3cd;
-                    }
-                    
-                    @media (max-width: 768px) {
-                        .form-row {
-                            flex-direction: column;
-                            gap: 0;
-                        }
-                        
-                        .customer-form-container {
-                            max-height: 80vh;
-                        }
-                    }
-                </style>
-            `,
-            icon: 'info',
-            showCancelButton: true,
-            confirmButtonColor: '#28a745',
-            cancelButtonColor: '#6c757d',
-            confirmButtonText: '<i class="fas fa-credit-card"></i> Place Order',
-            cancelButtonText: '<i class="fas fa-times"></i> Cancel',
-            reverseButtons: true,
-            width: '700px',
-            customClass: {
-                popup: 'customer-info-modal',
-                confirmButton: 'btn-place-order',
-                cancelButton: 'btn-cancel-order'
-            },
-            preConfirm: () => {
-                const form = document.getElementById('customerForm');
-                const formData = new FormData(form);
-                
-                // Validate required fields
-                const firstName = document.getElementById('firstName').value.trim();
-                const lastName = document.getElementById('lastName').value.trim();
-                const email = document.getElementById('email').value.trim();
-                const phone = document.getElementById('phone').value.trim();
-                const address = document.getElementById('address').value.trim();
-                
-                if (!firstName || !lastName || !email || !phone || !address) {
-                    Swal.showValidationMessage('Please fill in all required fields');
-                    return false;
+
+        // Fetch user details from the session
+        fetch('../controller/get_user_details.php')
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Failed to fetch user details');
                 }
-                
-                // Email validation
-                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-                if (!emailRegex.test(email)) {
-                    Swal.showValidationMessage('Please enter a valid email address');
-                    return false;
-                }
-                
-                return {
-                    first_name: firstName,
-                    last_name: lastName,
-                    email: email,
-                    phone: phone,
-                    address: address,
-                    city: document.getElementById('city').value.trim(),
-                    zip_code: document.getElementById('zipCode').value.trim(),
-                    payment_method: document.getElementById('paymentMethod').value,
-                    special_instructions: document.getElementById('specialInstructions').value.trim()
-                };
-            }
-        }).then((result) => {
-            if (result.isConfirmed) {
-                this.submitOrder(result.value);
-            }
-        });
+                return response.json();
+            })
+            .then(user => {
+                const firstName = user.firstName || '';
+                const lastName = user.lastName || '';
+                const email = user.email || '';
+                const phone = user.phone || '';
+                const address = user.address || '';
+                const city = user.city || '';
+                const state = user.state || '';
+                const zipCode = user.zipCode || '';
+
+                // Show customer information form with pre-filled data
+                Swal.fire({
+                    title: 'Customer Information',
+                    html: `
+                        <div class="customer-form-container">
+                            <form id="customerForm" class="customer-form">
+                                <div class="form-section">
+                                    <h6 class="section-title"><i class="fas fa-user"></i> Personal Information</h6>
+                                    <div class="form-row">
+                                        <div class="form-group col-md-6">
+                                            <label for="firstName">First Name *</label>
+                                            <input type="text" class="form-control" id="firstName" value="${firstName}" placeholder="Enter first name" required>
+                                        </div>
+                                        <div class="form-group col-md-6">
+                                            <label for="lastName">Last Name *</label>
+                                            <input type="text" class="form-control" id="lastName" value="${lastName}" placeholder="Enter last name" required>
+                                        </div>
+                                    </div>
+                                    <div class="form-row">
+                                        <div class="form-group col-md-6">
+                                            <label for="email">Email Address *</label>
+                                            <input type="email" class="form-control" id="email" value="${email}" placeholder="Enter email address" required>
+                                        </div>
+                                        <div class="form-group col-md-6">
+                                            <label for="phone">Phone Number *</label>
+                                            <input type="tel" class="form-control" id="phone" value="${phone}" placeholder="Enter phone number" required>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="form-section">
+                                    <h6 class="section-title"><i class="fas fa-map-marker-alt"></i> Delivery Information</h6>
+                                    <div class="form-group">
+                                        <label for="address">Delivery Address *</label>
+                                        <textarea class="form-control" id="address" placeholder="Enter complete delivery address" rows="2" required>${address}</textarea>
+                                    </div>
+                                    <div class="form-row">
+                                        <div class="form-group col-md-6">
+                                            <label for="city">City</label>
+                                            <input type="text" class="form-control" id="city" value="${city}" placeholder="Enter city">
+                                        </div>
+                                        <div class="form-group col-md-6">
+                                            <label for="zipCode">ZIP Code</label>
+                                            <input type="text" class="form-control" id="zipCode" value="${zipCode}" placeholder="Enter ZIP code">
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="form-section">
+                                    <h6 class="section-title"><i class="fas fa-credit-card"></i> Payment & Notes</h6>
+                                    <div class="form-group">
+                                        <label for="paymentMethod">Payment Method</label>
+                                        <select class="form-control" id="paymentMethod">
+                                            <option value="cash">💵 Cash on Delivery</option>
+                                            <option value="credit_card">💳 Credit Card</option>
+                                            <option value="debit_card">💳 Debit Card</option>
+                                            <option value="online">🌐 Online Payment</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="specialInstructions">Special Instructions</label>
+                                        <textarea class="form-control" id="specialInstructions" placeholder="Any special requests or delivery instructions..." rows="2"></textarea>
+                                    </div>
+                                </div>
+                            </form>
+                            
+                            <div class="order-summary">
+                                <h6 class="summary-title"><i class="fas fa-receipt"></i> Order Summary</h6>
+                                <div class="summary-row">
+                                    <span><i class="fas fa-box text-primary"></i> Items:</span>
+                                    <span class="summary-value">${itemCount}</span>
+                                </div>
+                                <div class="summary-row total-row">
+                                    <span><i class="fas fa-dollar-sign text-success"></i> Total:</span>
+                                    <span class="summary-value total-amount">$${total.toFixed(2)}</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <style>
+                            .customer-form-container {
+                                text-align: left;
+                                max-height: 70vh;
+                                overflow-y: auto;
+                                padding: 10px;
+                            }
+                            
+                            .customer-form {
+                                margin-bottom: 20px;
+                            }
+                            
+                            .form-section {
+                                margin-bottom: 25px;
+                                padding: 15px;
+                                border: 1px solid #e9ecef;
+                                border-radius: 8px;
+                                background-color: #f8f9fa;
+                            }
+                            
+                            .section-title {
+                                color: #495057;
+                                margin-bottom: 15px;
+                                font-weight: 600;
+                                border-bottom: 2px solid #dee2e6;
+                                padding-bottom: 8px;
+                            }
+                            
+                            .form-row {
+                                display: flex;
+                                gap: 15px;
+                                margin-bottom: 15px;
+                            }
+                            
+                            .form-group {
+                                flex: 1;
+                                margin-bottom: 15px;
+                            }
+                            
+                            .form-group label {
+                                display: block;
+                                margin-bottom: 5px;
+                                font-weight: 500;
+                                color: #495057;
+                            }
+                            
+                            .form-control {
+                                width: 100%;
+                                padding: 10px;
+                                border: 1px solid #ced4da;
+                                border-radius: 6px;
+                                font-size: 14px;
+                                transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+                            }
+                            
+                            .form-control:focus {
+                                border-color: #80bdff;
+                                outline: 0;
+                                box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
+                            }
+                            
+                            .order-summary {
+                                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                                color: white;
+                                padding: 20px;
+                                border-radius: 10px;
+                                box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+                            }
+                            
+                            .summary-title {
+                                margin-bottom: 15px;
+                                font-size: 16px;
+                                font-weight: 600;
+                            }
+                            
+                            .summary-row {
+                                display: flex;
+                                justify-content: space-between;
+                                padding: 10px 0;
+                                border-top: 2px solid rgba(255, 255, 255, 0.3);
+                            }
+                            
+                            .summary-row:first-of-type {
+                                border-top: none;
+                            }
+                            
+                            .summary-value {
+                                font-weight: 600;
+                            }
+                            
+                            .total-row {
+                                font-size: 18px;
+                                font-weight: 700;
+                                margin-top: 10px;
+                                padding-top: 15px;
+                                border-top: 3px solid rgba(255, 255, 255, 0.5);
+                            }
+                        </style>
+                    `,
+                    width: '900px',
+                    showCancelButton: true,
+                    confirmButtonText: '<i class="fas fa-credit-card"></i> Place Order',
+                    cancelButtonText: '<i class="fas fa-times"></i> Cancel',
+                    customClass: {
+                        confirmButton: 'btn-place-order',
+                        cancelButton: 'btn-cancel-order'
+                    },
+                    buttonsStyling: false,
+                    preConfirm: () => {
+                        const form = document.getElementById('customerForm');
+                        if (!form.checkValidity()) {
+                            Swal.showValidationMessage('Please fill in all required fields');
+                            return false;
+                        }
+                        return {
+                            firstName: document.getElementById('firstName').value,
+                            lastName: document.getElementById('lastName').value,
+                            email: document.getElementById('email').value,
+                            phone: document.getElementById('phone').value,
+                            address: document.getElementById('address').value,
+                            city: document.getElementById('city').value,
+                            zipCode: document.getElementById('zipCode').value,
+                            paymentMethod: document.getElementById('paymentMethod').value,
+                            specialInstructions: document.getElementById('specialInstructions').value
+                        };
+                    }
+                }).then(result => {
+                    if (result.isConfirmed) {
+                        this.submitOrder(result.value);
+                    }
+                });
+            })
+            .catch(error => {
+                console.error('Error fetching user details:', error);
+                this.showNotification('Failed to load checkout form. Please try again.', 'error');
+            });
     }
 
     async submitOrder(customerInfo) {
@@ -676,9 +663,21 @@ class ShoppingCart {
                 }
             });
 
+            // Map field names to match backend expectations
             const orderData = {
                 items: this.items,
-                customer_info: customerInfo
+                customer_info: {
+                    first_name: customerInfo.firstName,
+                    last_name: customerInfo.lastName,
+                    email: customerInfo.email,
+                    phone: customerInfo.phone,
+                    address: customerInfo.address,
+                    city: customerInfo.city || '',
+                    state: customerInfo.state || '',
+                    zip_code: customerInfo.zipCode || '',
+                    payment_method: customerInfo.paymentMethod || 'cash',
+                    special_instructions: customerInfo.specialInstructions || ''
+                }
             };
 
             const response = await fetch('../admin/controller/process_order.php', {
@@ -719,7 +718,15 @@ class ShoppingCart {
                     `,
                     icon: 'success',
                     confirmButtonColor: '#28a745',
-                    confirmButtonText: '<i class="fas fa-check"></i> Great!'
+                    confirmButtonText: '<i class="fas fa-check"></i> Great!',
+                    showCancelButton: true,
+                    cancelButtonText: '<i class="fas fa-list"></i> View My Orders',
+                    cancelButtonColor: '#3a6073'
+                }).then((result) => {
+                    if (result.dismiss === Swal.DismissReason.cancel) {
+                        // Redirect to orders page
+                        window.location.href = 'orders.php';
+                    }
                 });
 
                 // Clear cart and close

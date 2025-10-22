@@ -102,6 +102,26 @@
     color: #004085;
 }
 
+.status-confirmed {
+    background: #d1ecf1;
+    color: #0c5460;
+}
+
+.status-ready {
+    background: #d4edda;
+    color: #155724;
+}
+
+.status-out_for_delivery {
+    background: #e2e3e5;
+    color: #383d41;
+}
+
+.status-cancelled {
+    background: #f8d7da;
+    color: #721c24;
+}
+
 .order-items {
     margin-bottom: 1rem;
 }
@@ -116,15 +136,64 @@
 .item-name {
     color: #3a6073;
     font-weight: 500;
+    flex: 1;
 }
 
 .item-quantity {
     color: #6c757d;
+    margin: 0 1rem;
 }
 
 .item-price {
     color: #3a6073;
     font-weight: 600;
+}
+
+.order-details {
+    margin: 1rem 0;
+    padding: 1rem;
+    background: #f8f9fa;
+    border-radius: 8px;
+}
+
+.detail-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.detail-row:last-child {
+    border-bottom: none;
+}
+
+.detail-label {
+    color: #6c757d;
+    font-weight: 500;
+}
+
+.detail-label i {
+    margin-right: 0.5rem;
+    color: #3a6073;
+}
+
+.detail-value {
+    color: #3a6073;
+    font-weight: 600;
+    text-align: right;
+    max-width: 60%;
+}
+
+.payment-status-paid {
+    color: #28a745;
+}
+
+.payment-status-pending {
+    color: #ffc107;
+}
+
+.payment-status-failed {
+    color: #dc3545;
 }
 
 .order-footer {
@@ -143,6 +212,33 @@
 .order-actions {
     display: flex;
     gap: 0.5rem;
+}
+
+.btn-sm {
+    padding: 0.4rem 1rem;
+    font-size: 0.9rem;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-danger {
+    background: #dc3545;
+    color: white;
+}
+
+.btn-danger:hover {
+    background: #c82333;
+}
+
+.btn-primary {
+    background: #3a6073;
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #2c4856;
 }
 
 /* Responsive Design */

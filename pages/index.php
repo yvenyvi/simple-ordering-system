@@ -11,6 +11,10 @@
   <link
     rel="stylesheet"
     href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" />
+  
+  <!-- SweetAlert2 CSS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+  
   <script src="../assets/js/header.js"></script>
 
 </head>
@@ -87,6 +91,9 @@
   include '../includes/footer.php';
   ?>
 
+  <!-- SweetAlert2 JS -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  
   <script src="../assets/js/sidebar.js"></script>
   <script src="../assets/js/cart.js"></script>
 </body>

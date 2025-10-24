@@ -24,6 +24,24 @@ require_once '../controller/events.php';
                 <p class="lead">Join us for special events, workshops, and dining experiences!</p>
             </div>
 
+            <!-- Debug Information (remove in production) -->
+            <?php if (isset($_GET['debug'])): ?>
+                <div class="alert alert-info">
+                    <strong>Debug Info:</strong><br>
+                    Current Date: <?php echo date('Y-m-d H:i:s'); ?><br>
+                    Events Count: <?php echo count($events); ?><br>
+                    Events Variable Type: <?php echo gettype($events); ?><br>
+                    <?php if (!empty($events)): ?>
+                        Events Found:
+                        <ul>
+                            <?php foreach ($events as $event): ?>
+                                <li><?php echo htmlspecialchars($event['event_name']); ?> - <?php echo $event['event_date']; ?> - Active: <?php echo $event['is_active'] ? 'Yes' : 'No'; ?></li>
+                            <?php endforeach; ?>
+                        </ul>
+                    <?php endif; ?>
+                </div>
+            <?php endif; ?>
+
             <?php if (empty($events)): ?>
                 <!-- No Events -->
                 <div class="no-events">

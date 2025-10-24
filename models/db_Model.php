@@ -55,7 +55,6 @@ function confirm_query($result_set) {
 
 /**
  * Save data to database (INSERT operation)
- * Note: UPDATE functionality has been temporarily disabled
  */
 function save($table, $data) {
     global $connection;

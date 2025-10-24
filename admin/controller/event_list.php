@@ -228,6 +228,9 @@ function handleCreateEvent() {
     // Prepare event data
     $event_data = prepareEventData($_POST);
     
+    // Debug logging
+    error_log("Creating new event: " . $event_data['event_name'] . " with active status: " . $event_data['is_active']);
+    
     // Save event to database
     $new_id = save('events', $event_data);
     
@@ -235,10 +238,31 @@ function handleCreateEvent() {
         // Handle image upload if present
         $image_uploaded = handleEventImageUpload($new_id);
         
+        // Verify the event was saved correctly
+        global $connection;
+        $verify_sql = "SELECT event_name, is_active FROM events WHERE event_id = ?";
+        $verify_stmt = mysqli_prepare($connection, $verify_sql);
+        if ($verify_stmt) {
+            mysqli_stmt_bind_param($verify_stmt, "i", $new_id);
+            mysqli_stmt_execute($verify_stmt);
+            $verify_result = mysqli_stmt_get_result($verify_stmt);
+            $saved_event = mysqli_fetch_assoc($verify_result);
+            mysqli_stmt_close($verify_stmt);
+            
+            if ($saved_event) {
+                error_log("Event verified - Name: " . $saved_event['event_name'] . ", Active: " . $saved_event['is_active']);
+            }
+        }
+        
         // Set success message
         $message_suffix = $image_uploaded ? ' with image!' : '!';
-        $GLOBALS['success_message'] = "Event '{$event_data['event_name']}' has been successfully created{$message_suffix}";
+        $active_status = $event_data['is_active'] ? ' (Active)' : ' (Inactive)';
+        $GLOBALS['success_message'] = "Event '{$event_data['event_name']}' has been successfully created{$message_suffix}{$active_status}";
+        
+        // Additional success logging
+        error_log("Event created successfully with ID: $new_id");
     } else {
+        error_log("Failed to create event. Save function returned false.");
         $GLOBALS['error_message'] = "Failed to create event. Please try again.";
     }
 }
